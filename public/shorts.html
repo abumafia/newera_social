@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Shorts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Open Graph Meta Tags for Sharing -->
+    <meta property="og:title" content="NewEra Shorts">
+    <meta property="og:description" content="Qisqa videolarni ko'ring va baham ko'ring!">
+    <meta property="og:image" content="/uploads/icon.png">
+    <meta property="og:type" content="video.other">
+    <meta property="og:video" content="/uploads/sample-video.mp4">
+    <style>
+        body {
+            background: #000;
+            color: #f1f1f1;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .shorts-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .short-item {
+            height: 100vh;
+            scroll-snap-align: start;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        
+        .short-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+        
+        .short-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 1rem;
+            z-index: 10;
+        }
+        
+        .short-user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .short-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+            border: 2px solid #fff;
+        }
+        
+        .short-actions {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 1rem 0;
+        }
+        
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            font-size: 0.875rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .liked .action-icon {
+            color: #ff0000;
+        }
+        
+        /* Comment Modal */
+        .comment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .comment-container {
+            width: 90%;
+            max-width: 400px;
+            height: 80%;
+            background: #000;
+            border-radius: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .comment-header {
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comment-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .comment-item {
+            margin-bottom: 1rem;
+        }
+        
+        .comment-user {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .comment-content {
+            margin-bottom: 0.5rem;
+        }
+        
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #666;
+        }
+        
+        .reply-form {
+            padding: 1rem;
+            border-top: 1px solid #333;
+            display: flex;
+        }
+        
+        .reply-input {
+            flex: 1;
+            background: #333;
+            border: none;
+            border-radius: 1rem;
+            padding: 0.75rem;
+            color: #fff;
+            margin-right: 0.5rem;
+        }
+        
+        .reply-btn {
+            background: #1DA1F2;
+            color: #fff;
+            border: none;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            font-weight: bold;
+        }
+        
+        /* Upload Modal */
+        #uploadModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-container {
+            width: 90%;
+            max-width: 400px;
+            background: #000;
+            border-radius: 1rem;
+            overflow: hidden;
+            padding: 1rem;
+        }
+        
+        .upload-input {
+            width: 100%;
+            background: #333;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-select {
+            width: 100%;
+            background: #333;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .upload-btn {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .shorts-container {
+                height: 100vh;
+            }
+            
+            .short-item {
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body class="bg-black">
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="text-xl font-bold">
+                    <a href="/" class="flex items-center">
+                        <img src="/uploads/icon.png" alt="NewEra Logo" class="h-8 mr-2 filter brightness-125">
+                        <span class="hidden sm:inline">NewEra</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="/profile" class="text-gray-300 hover:text-blue-400 px-3 py-1 rounded-full">Profil</a>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-3 py-2 rounded-full hover:bg-red-600 transition-colors">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Shorts Container -->
+    <div id="shortsContainer" class="shorts-container">
+        <!-- Shorts will be loaded here -->
+    </div>
+
+    <!-- Add Short Button -->
+    <button id="addShortBtn" class="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold rounded-full w-16 h-16 shadow-lg z-40">+</button>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="hidden">
+        <div class="upload-container">
+            <h3 class="text-lg font-bold mb-4">Video yuklash (60s gacha)</h3>
+            <input type="file" id="videoInput" accept="video/*" class="upload-input">
+            <input type="text" id="titleInput" placeholder="Nomi" class="upload-input">
+            <textarea id="descInput" placeholder="Izoh" class="upload-input" rows="3"></textarea>
+            <select id="boostSelect" class="upload-select">
+                <option value="0">Boost: 0$</option>
+                <option value="1">Boost 1 daraja: 5$</option>
+                <option value="2">Boost 2 daraja: 10$</option>
+            </select>
+            <div class="upload-buttons">
+                <button id="cancelUpload" class="bg-gray-600 text-white upload-btn">Bekor qilish</button>
+                <button id="uploadShort" class="bg-green-500 text-white upload-btn">Yuklash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comment Modal -->
+    <div id="commentModal" class="comment-modal hidden">
+        <div class="comment-container">
+            <div class="comment-header">
+                <h3 id="commentTitle" class="text-lg font-bold">Izohlar</h3>
+                <button id="closeCommentModal" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="comment-list" id="commentList">
+                <!-- Comments will be loaded here -->
+            </div>
+            <form class="reply-form" id="newCommentForm">
+                <input type="text" id="newCommentInput" class="reply-input" placeholder="Izoh yozing..." required>
+                <button type="submit" class="reply-btn">Yuborish</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+        let currentShorts = [];
+        let currentShortIndex = 0;
+        let currentShortId = null;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Session check and logout
+            try {
+                const response = await fetch('/user/me');
+                if (response.status === 401) {
+                    window.location.href = '/register-login.html';
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    currentUserId = data.user._id;
+                }
+            } catch (error) {
+                console.error('Session error:', error);
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                try {
+                    await fetch('/logout', { method: 'POST' });
+                    window.location.href = '/register-login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            });
+
+            // Add short button
+            document.getElementById('addShortBtn').addEventListener('click', openUploadModal);
+            document.getElementById('cancelUpload').addEventListener('click', () => {
+                document.getElementById('uploadModal').classList.add('hidden');
+                resetUploadForm();
+            });
+            document.getElementById('uploadShort').addEventListener('click', uploadShort);
+
+            // Load shorts
+            await loadShorts();
+
+            // Setup comment modal
+            setupCommentModal();
+        });
+
+        function resetUploadForm() {
+            document.getElementById('videoInput').value = '';
+            document.getElementById('titleInput').value = '';
+            document.getElementById('descInput').value = '';
+            document.getElementById('boostSelect').value = '0';
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        async function uploadShort() {
+            const videoFile = document.getElementById('videoInput').files[0];
+            const title = document.getElementById('titleInput').value.trim();
+            const description = document.getElementById('descInput').value.trim();
+            const boostLevel = document.getElementById('boostSelect').value;
+
+            if (!videoFile) return alert('Video faylni tanlang');
+            if (!title) return alert('Nomi kiriting');
+            if (!description) return alert('Izoh kiriting');
+
+            // Check duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = async function() {
+                window.URL.revokeObjectURL(video.src);
+                if (video.duration > 60) {
+                    return alert('Video 60 sekunddan oshmasligi kerak');
+                }
+
+                const formData = new FormData();
+                formData.append('video', videoFile);
+                formData.append('title', title);
+                formData.append('description', description);
+                formData.append('boostLevel', boostLevel);
+
+                try {
+                    const response = await fetch('/api/shorts', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Video muvaffaqiyatli yuklandi!');
+                        document.getElementById('uploadModal').classList.add('hidden');
+                        resetUploadForm();
+                        await loadShorts();
+                    } else {
+                        alert(data.message || 'Xatolik yuz berdi');
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Yuklashda xatolik');
+                }
+            };
+            video.src = URL.createObjectURL(videoFile);
+        }
+
+        async function loadShorts() {
+            try {
+                const response = await fetch('/api/shorts');
+                const data = await response.json();
+                if (data.success) {
+                    currentShorts = data.shorts;
+                    renderShorts();
+                }
+            } catch (error) {
+                console.error('Error loading shorts:', error);
+            }
+        }
+
+        function renderShorts() {
+            const container = document.getElementById('shortsContainer');
+            container.innerHTML = '';
+
+            currentShorts.forEach((short, index) => {
+                const shortDiv = document.createElement('div');
+                shortDiv.className = 'short-item';
+                shortDiv.innerHTML = `
+                    <video class="short-video" src="${short.media}" muted loop playsinline></video>
+                    <div class="short-overlay">
+                        <div class="text-white text-lg font-bold mb-2">${short.title}</div>
+                        <p class="text-gray-300 mb-4">${short.description}</p>
+                        <div class="short-user-info">
+                            <img src="${short.userId.profilePic || '/default-avatar.png'}" alt="Avatar" class="short-user-avatar">
+                            <div>
+                                <div class="font-bold">${short.userId.fullName}</div>
+                                <div class="text-gray-400 text-sm">@${short.userId.username}</div>
+                            </div>
+                        </div>
+                        <div class="short-actions">
+                            <button class="action-btn ${short.likes.includes(currentUserId) ? 'liked' : ''}" onclick="toggleLike('${short._id}')">
+                                <div class="action-icon">❤️</div>
+                                <div>${short.likes.length}</div>
+                            </button>
+                            <button class="action-btn" onclick="openComments('${short._id}')">
+                                <div class="action-icon">💬</div>
+                                <div>${short.comments.length}</div>
+                            </button>
+                            <button class="action-btn" onclick="shareShort('${short._id}', '${short.description.substring(0, 100)}')">
+                                <div class="action-icon">📤</div>
+                                <div>${short.shares.length || 0}</div>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(shortDiv);
+
+                // Auto play when in view
+                const video = shortDiv.querySelector('video');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            video.play();
+                        } else {
+                            video.pause();
+                            video.currentTime = 0;
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                observer.observe(shortDiv);
+            });
+        }
+
+        async function toggleLike(shortId) {
+            try {
+                const response = await fetch(`/posts/${shortId}/like`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    // Update UI
+                    const currentShort = currentShorts.find(s => s._id === shortId);
+                    currentShort.likes.length = data.likes;
+                    renderShorts(); // Re-render to update like count and heart color
+                }
+            } catch (error) {
+                console.error('Like error:', error);
+            }
+        }
+
+        function openComments(shortId) {
+            currentShortId = shortId;
+            document.getElementById('commentModal').classList.remove('hidden');
+            loadComments(shortId);
+        }
+
+        async function loadComments(shortId) {
+            try {
+                const short = currentShorts.find(s => s._id === shortId);
+                const commentList = document.getElementById('commentList');
+                commentList.innerHTML = '';
+
+                short.comments.forEach(comment => {
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = 'comment-item';
+                    commentDiv.innerHTML = `
+                        <div class="comment-user">
+                            <img src="${comment.userId.profilePic || '/default-avatar.png'}" alt="Avatar" class="comment-avatar">
+                            <div class="font-semibold">${comment.userId.fullName}</div>
+                        </div>
+                        <div class="comment-content">${comment.content}</div>
+                        <div class="comment-actions">
+                            <button onclick="toggleCommentLike('${comment._id}')" class="mr-2 ${comment.likes.includes(currentUserId) ? 'text-red-500' : ''}">❤️ ${comment.likes.length}</button>
+                            <button onclick="replyToComment('${comment._id}')">Javob berish</button>
+                        </div>
+                        <!-- Replies -->
+                        <div class="ml-8 mt-2">
+                            ${comment.replies.map(reply => `
+                                <div class="comment-item ml-4 p-2 bg-gray-800 rounded">
+                                    <div class="comment-user">
+                                        <img src="${reply.userId.profilePic || '/default-avatar.png'}" alt="Avatar" class="comment-avatar w-6 h-6">
+                                        <div class="font-semibold text-sm">${reply.userId.fullName}</div>
+                                    </div>
+                                    <div class="comment-content text-sm">${reply.content}</div>
+                                    <div class="comment-actions text-xs">
+                                        <button onclick="toggleReplyLike('${reply._id}')" class="mr-1 ${reply.likes.includes(currentUserId) ? 'text-red-500' : ''}">❤️ ${reply.likes.length}</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    commentList.appendChild(commentDiv);
+                });
+            } catch (error) {
+                console.error('Error loading comments:', error);
+            }
+        }
+
+        async function addComment() {
+            const content = document.getElementById('newCommentInput').value.trim();
+            if (!content) return;
+
+            try {
+                const response = await fetch(`/posts/${currentShortId}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('newCommentInput').value = '';
+                    // Reload comments
+                    const short = currentShorts.find(s => s._id === currentShortId);
+                    short.comments.push(data.comment);
+                    loadComments(currentShortId);
+                    renderShorts(); // Update counts
+                }
+            } catch (error) {
+                console.error('Comment error:', error);
+            }
+        }
+
+        async function toggleCommentLike(commentId) {
+            try {
+                const response = await fetch(`/posts/${currentShortId}/comments/${commentId}/like`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    // Update UI
+                    loadComments(currentShortId);
+                }
+            } catch (error) {
+                console.error('Comment like error:', error);
+            }
+        }
+
+        function replyToComment(commentId) {
+            const replyContent = prompt('Javob yozing:');
+            if (!replyContent) return;
+
+            try {
+                const response = await fetch(`/posts/${currentShortId}/comments/${commentId}/reply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: replyContent })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Reload comments
+                    loadComments(currentShortId);
+                }
+            } catch (error) {
+                console.error('Reply error:', error);
+            }
+        }
+
+        async function toggleReplyLike(replyId) {
+            // Note: For replies, you might need a more specific endpoint, but for simplicity, assume similar to comments
+            console.log('Reply like:', replyId); // Implement as needed
+        }
+
+        function setupCommentModal() {
+            const modal = document.getElementById('commentModal');
+            const closeBtn = document.getElementById('closeCommentModal');
+            const form = document.getElementById('newCommentForm');
+
+            closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addComment();
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+        }
+
+        async function shareShort(shortId, description) {
+            try {
+                const response = await fetch(`/posts/${shortId}/share`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    const short = currentShorts.find(s => s._id === shortId);
+                    short.shares = short.shares || [];
+                    short.shares.length = data.shares;
+                    renderShorts();
+                }
+
+                const short = currentShorts.find(s => s._id === shortId);
+                const shareData = {
+                    title: `${short.userId.fullName} - ${short.title}`,
+                    text: description,
+                    url: `${window.location.origin}/shorts#${shortId}`
+                };
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (error) {
+                        console.error('Share error:', error);
+                        fallbackShare(shareData);
+                    }
+                } else {
+                    fallbackShare(shareData);
+                }
+            } catch (error) {
+                console.error('Share error:', error);
+                fallbackShare({ title: 'NewEra Shorts', text: description, url: `${window.location.origin}/shorts#${shortId}` });
+            }
+        }
+
+        function fallbackShare(shareData) {
+            // Social media links
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
+            const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}`;
+            window.open(twitterUrl, '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Asosiy Sahifa</title>
+    <meta property="og:title" content="NewEra - Asosiy Sahifa">
+    <meta property="og:description" content="NewEra ijtimoiy tarmog'i - postlar, ulashish va ko'proq!">
+    <meta property="og:image" content="./uploads/icon.png">
+    <meta property="og:url" content="https://newera.com">
+    <meta property="og:site_name" content="NewEra">
+    <meta property="og:type" content="website">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-input {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .glass-input:focus {
+            background: rgba(40, 40, 40, 0.7);
+            border-color: rgba(29, 161, 242, 0.6);
+            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+        }
+        
+        .glass-button {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-button:hover {
+            background: rgba(50, 50, 50, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Twitter uslubidagi ranglar */
+        .twitter-blue {
+            background-color: #1DA1F2;
+        }
+        
+        .twitter-blue:hover {
+            background-color: #1a91da;
+        }
+
+        .premium-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .sponsor-badge {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            color: #ffd700;
+        }
+
+        .boost-badge {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+        
+        /* Scrollbar dizayni */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.6);
+        }
+        
+        /* Animatsiyalar */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Twitterga o'xshash hover effektlari */
+        .hover-animation {
+            transition: background-color 0.2s ease;
+        }
+        
+        .hover-animation:hover {
+            background-color: rgba(30, 30, 30, 0.6);
+        }
+
+        .ad-card {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Stiker grid */
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 0.5rem;
+        }
+
+        .sticker-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .sticker-item:hover {
+            transform: scale(1.1);
+        }
+
+        .premium-sticker {
+            border: 2px solid #ffd700;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            animation: sparkle 2s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Media preview */
+        .media-preview {
+            position: relative;
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .remove-media {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .navbar-space {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .search-input-mobile {
+                width: 100% !important;
+            }
+
+            .sticker-grid {
+                grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+            }
+
+            .sticker-item {
+                width: 30px;
+                height: 30px;
+                font-size: 1.4rem;
+            }
+
+            .modal-content {
+                margin: 0.5rem;
+                max-width: calc(100% - 1rem);
+                padding: 1rem;
+            }
+
+            .post-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            /* Bottom navbar styles */
+            .bottom-nav {
+                background: rgba(10, 10, 10, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .bottom-nav-item {
+                flex: 1;
+                padding: 0.5rem;
+                text-align: center;
+                color: #a0a0a0;
+                transition: color 0.2s ease;
+            }
+
+            .bottom-nav-item.active {
+                color: #1DA1F2;
+            }
+
+            .bottom-nav-item:hover {
+                color: #1DA1F2;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40 navbar-space">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="text-xl font-bold">
+                    <a href="/" class="flex items-center">
+                        <img src="./uploads/icon.png" alt="NewEra Logo" class="h-8 mr-2 filter brightness-125">
+                        <span class="hidden sm:inline">NewEra</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <!-- Qidiruv qutisi -->
+                    <div class="relative flex-1 max-w-xs sm:max-w-md">
+                        <input type="text" id="searchInput" placeholder="🔍Qidirish..." 
+                               class="glass-input w-full px-3 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 search-input-mobile">
+                        <div id="searchResults" class="absolute hidden w-full mt-1 rounded-xl shadow-lg search-results z-50"></div>
+                    </div>
+                    
+                    <a href="/profile" class="twitter-blue text-white px-2 py-2 sm:px-4 rounded-full hover:bg-blue-600 transition-colors text-xs sm:text-sm">Profil</a>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-2 py-2 sm:px-3 rounded-full hover:bg-red-600 transition-colors text-xs sm:text-sm">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Asosiy kontent -->
+    <div class="max-w-2xl mx-auto px-4 pt-24 pb-24 md:pb-16">
+        <!-- Post yaratish tugmasi (faqat desktop) -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 hidden md:flex">
+            <a href="/create.html" class="twitter-blue text-white px-4 py-3 rounded-full hover:bg-blue-600 transition-colors font-medium flex items-center w-full sm:w-auto justify-center">
+                <span class="text-lg mr-2">+</span> Yangi post yaratish
+            </a>
+            
+            <!-- Qidiruv filtrlari -->
+            <div id="searchFilters" class="hidden flex items-center space-x-2 w-full justify-center sm:justify-end">
+                <span class="text-gray-400 text-sm">Qidiruv natijalari:</span>
+                <button id="clearSearchBtn" class="glass-button text-gray-300 px-3 py-1 rounded-full hover:bg-gray-700 text-sm transition-colors">
+                    Hamma postlarni ko'rsatish
+                </button>
+            </div>
+        </div>
+
+        <!-- Postlar ro'yxati -->
+        <div id="postsContainer" class="space-y-4">
+            <!-- Postlar JavaScript orqali yuklanadi -->
+        </div>
+
+        <!-- Ko'proq yuklash tugmasi -->
+        <div id="loadMoreContainer" class="mt-6 text-center">
+            <button id="loadMoreBtn" class="glass-button text-gray-300 px-4 py-2 rounded-full hover:bg-gray-700 transition-colors">Ko'proq yuklash</button>
+        </div>
+    </div>
+
+    <!-- 📱 Mobil Pastki Navbar -->
+    <nav class="fixed bottom-0 left-0 w-full bg-gray-900/80 backdrop-blur-md border-t border-gray-700 sm:hidden z-50">
+        <div class="flex justify-around items-center py-2 text-gray-400">
+            
+            <!-- Asosiy -->
+            <a href="/" class="flex flex-col items-center hover:text-blue-500 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="text-xs">Asosiy</span>
+            </a>
+
+            <!-- Create -->
+            <a href="/create.html" class="flex flex-col items-center text-white">
+                <div class="bg-blue-600 p-3 rounded-full shadow-lg -mt-6 border-4 border-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                <span class="text-xs mt-1 text-blue-400">Yaratish</span>
+            </a>
+
+            <!-- Profil -->
+            <a href="/profile" class="flex flex-col items-center hover:text-purple-500 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span class="text-xs">Profil</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        let currentPage = 1;
+        let isLoading = false;
+        let sessionUserId = null;
+        let currentUser = null;
+        let isSearching = false;
+        let searchQuery = '';
+        let searchTimeout = null;
+        let adInterval = null;
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSession();
+            loadPosts();
+            
+            async function checkSession() {
+                try {
+                    const response = await fetch('/user/me');
+                    if (response.status === 401) {
+                        window.location.href = '/register-login.html';
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    if (!data.success) {
+                        window.location.href = '/register-login.html';
+                    }
+                } catch (error) {
+                    console.error('Session tekshirishda xatolik:', error);
+                    window.location.href = '/register-login.html';
+                }
+            }
+
+            checkSession();
+            
+            document.getElementById('loadMoreBtn').addEventListener('click', () => {
+                if (isSearching) {
+                    loadSearchResults(false);
+                } else {
+                    loadPosts();
+                }
+            });
+            
+            setupSearch();
+            
+            document.getElementById('clearSearchBtn').addEventListener('click', () => {
+                document.getElementById('searchInput').value = '';
+                isSearching = false;
+                searchQuery = '';
+                document.getElementById('searchFilters').classList.add('hidden');
+                currentPage = 1;
+                document.getElementById('postsContainer').innerHTML = '';
+                loadPosts();
+            });
+
+            // Ulashish funksiyasi uchun event delegation
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.share-btn')) {
+                    const btn = e.target.closest('.share-btn');
+                    const postId = btn.dataset.postId;
+                    const title = btn.dataset.title;
+                    const text = btn.dataset.text;
+                    const image = btn.dataset.image;
+                    const monetization = btn.dataset.monetization;
+                    const url = `${window.location.origin}/posts/${postId}`;
+
+                    const shareData = {
+                        title: title,
+                        text: `${text} ${monetization ? `(${monetization})` : ''}`,
+                        url: url
+                    };
+
+                    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                        navigator.share(shareData).catch((err) => {
+                            if (err.name !== 'AbortError') {
+                                console.error('Ulashishda xatolik:', err);
+                                fallbackCopy();
+                            }
+                        });
+                    } else {
+                        fallbackCopy();
+                    }
+
+                    function fallbackCopy() {
+                        const shareText = `${title}\n\n${text}\n\nSayt: NewEra\nHavola: ${url}\n${monetization ? `Monetizatsiya: ${monetization}` : ''}`;
+                        navigator.clipboard.writeText(shareText).then(() => {
+                            showMessage('Ulashish havolasi nusxalandi!', 'success');
+                        }).catch(() => {
+                            // Eski brauzerlar uchun
+                            const textArea = document.createElement('textarea');
+                            textArea.value = shareText;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            showMessage('Ulashish havolasi nusxalandi!', 'success');
+                        });
+                    }
+                }
+            });
+        });
+
+        async function initializeSession() {
+            try {
+                const response = await fetch('/user/me');
+                if (response.status === 401) {
+                    window.location.href = '/register-login.html';
+                    return;
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    sessionUserId = data.user._id;
+                    
+                    document.getElementById('logoutBtn').addEventListener('click', async () => {
+                        try {
+                            await fetch('/logout', { method: 'POST' });
+                            window.location.href = '/register-login.html';
+                        } catch (error) {
+                            console.error('Chiqishda xatolik:', error);
+                        }
+                    });
+
+                    // Ads interval (har 5 postdan keyin reklama)
+                    if (!currentUser.isPremium) {
+                        adInterval = setInterval(() => {
+                            insertAd();
+                        }, 5000); // Har 5 soniyada tekshirish
+                    }
+                }
+            } catch (error) {
+                console.error('Session ma\'lumotlarini olishda xatolik:', error);
+            }
+        }
+
+        async function insertAd() {
+            try {
+                const response = await fetch('/ads');
+                const data = await response.json();
+                if (data.success && data.ads.length > 0) {
+                    const adElement = document.createElement('div');
+                    adElement.className = 'ad-card p-4 rounded-2xl my-4 text-center';
+                    adElement.innerHTML = `
+                        <p class="text-blue-400 mb-2">Reklama</p>
+                        ${data.ads.map(ad => `<img src="${ad.image}" alt="${ad.title}" class="mx-auto mb-2 cursor-pointer" onclick="window.open('${ad.url}', '_blank')" style="max-height: 100px;">`).join('')}
+                    `;
+                    const postsContainer = document.getElementById('postsContainer');
+                    if (postsContainer.children.length % 5 === 0) { // Har 5 postdan keyin
+                        postsContainer.appendChild(adElement);
+                    }
+                }
+            } catch (error) {
+                console.error('Reklama yuklashda xatolik:', error);
+            }
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                if (query === '') {
+                    searchResults.classList.add('hidden');
+                    isSearching = false;
+                    searchQuery = '';
+                    document.getElementById('searchFilters').classList.add('hidden');
+                    currentPage = 1;
+                    document.getElementById('postsContainer').innerHTML = '';
+                    loadPosts();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/search?q=${encodeURIComponent(query)}&type=quick`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            displayQuickSearchResults(data.results, query);
+                        }
+                    } catch (error) {
+                        console.error('Qidiruvda xatolik:', error);
+                    }
+                }, 300);
+            });
+            
+            searchInput.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query !== '' && searchResults.innerHTML !== '') {
+                    searchResults.classList.remove('hidden');
+                }
+            });
+            
+            searchInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    if (document.activeElement !== searchInput) {
+                        searchResults.classList.add('hidden');
+                    }
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+            
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    performFullSearch(this.value.trim());
+                }
+            });
+        }
+        
+        function displayQuickSearchResults(results, query) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="p-3 text-gray-400">Hech narsa topilmadi</div>';
+                searchResults.classList.remove('hidden');
+                return;
+            }
+            
+            let html = '';
+            
+            if (results.posts && results.posts.length > 0) {
+                html += '<div class="p-2 font-semibold text-sm border-b border-gray-700">Postlar</div>';
+                results.posts.slice(0, 3).forEach(post => {
+                    html += `
+                        <div class="p-2 hover:bg-gray-800 cursor-pointer border-b border-gray-700 search-item" data-type="post" data-id="${post._id}">
+                            <div class="font-medium">${highlightText(post.content, query)}</div>
+                            <div class="text-xs text-gray-500">${post.userId.fullName} tomonidan</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (results.users && results.users.length > 0) {
+                html += '<div class="p-2 font-semibold text-sm border-b border-gray-700">Foydalanuvchilar</div>';
+                results.users.slice(0, 3).forEach(user => {
+                    html += `
+                        <div class="p-2 hover:bg-gray-800 cursor-pointer border-b border-gray-700 search-item" data-type="user" data-id="${user._id}">
+                            <div class="flex items-center">
+                                <img src="${user.profilePic || 'https://via.placeholder.com/30'}" class="w-6 h-6 rounded-full mr-2">
+                                <div>
+                                    <div class="font-medium">${highlightText(user.fullName, query)}</div>
+                                    <div class="text-xs text-gray-500">@${highlightText(user.username, query)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            if ((results.posts && results.posts.length > 3) || (results.users && results.users.length > 3)) {
+                html += `
+                    <div class="p-2 text-center bg-gray-800">
+                        <button id="viewAllResults" class="text-blue-400 text-sm font-medium">
+                            Barcha natijalarni ko'rish
+                        </button>
+                    </div>
+                `;
+            }
+            
+            searchResults.innerHTML = html;
+            searchResults.classList.remove('hidden');
+            
+            document.querySelectorAll('.search-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    const id = this.getAttribute('data-id');
+                    
+                    if (type === 'post') {
+                        viewPost(id);
+                    } else if (type === 'user') {
+                        window.location.href = `/profile?id=${id}`;
+                    }
+                });
+            });
+            
+            if (document.getElementById('viewAllResults')) {
+                document.getElementById('viewAllResults').addEventListener('click', function() {
+                    performFullSearch(query);
+                    searchResults.classList.add('hidden');
+                });
+            }
+        }
+        
+        function highlightText(text, query) {
+            if (!query) return text;
+            
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="bg-blue-900 text-blue-200">$1</span>');
+        }
+        
+        function performFullSearch(query) {
+            if (query.trim() === '') return;
+            
+            searchQuery = query.trim();
+            isSearching = true;
+            currentPage = 1;
+            document.getElementById('postsContainer').innerHTML = '';
+            document.getElementById('searchFilters').classList.remove('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            
+            loadSearchResults(true);
+        }
+        
+        async function loadSearchResults(reset = false) {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            if (reset) {
+                currentPage = 1;
+                document.getElementById('postsContainer').innerHTML = '';
+            }
+            
+            try {
+                const response = await fetch(`/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.posts.length === 0 && currentPage === 1) {
+                        document.getElementById('postsContainer').innerHTML = `
+                            <div class="text-center py-10">
+                                <div class="text-gray-500 text-lg">"${searchQuery}" bo'yicha hech narsa topilmadi</div>
+                                <button id="tryOtherQuery" class="mt-4 text-blue-400 hover:text-blue-300 transition-colors">
+                                    Boshqa so'zlar bilan qidirish
+                                </button>
+                            </div>
+                        `;
+                        
+                        document.getElementById('tryOtherQuery').addEventListener('click', function() {
+                            document.getElementById('searchInput').focus();
+                        });
+                        
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    } else if (data.posts.length > 0) {
+                        renderPosts(data.posts, true);
+                        currentPage++;
+                    }
+                    
+                    if (data.posts.length < 10) {
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    } else {
+                        document.getElementById('loadMoreContainer').classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Qidiruv natijalarini yuklashda xatolik:', error);
+                document.getElementById('postsContainer').innerHTML = `
+                    <div class="text-center py-10 text-red-400">
+                        Qidiruv natijalarini yuklashda xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.
+                    </div>
+                `;
+            } finally {
+                isLoading = false;
+            }
+        }
+        
+        function viewPost(postId) {
+            document.getElementById('searchResults').classList.add('hidden');
+            isSearching = false;
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchFilters').classList.add('hidden');
+            
+            currentPage = 1;
+            document.getElementById('postsContainer').innerHTML = '';
+            loadPosts(true);
+            
+            setTimeout(() => {
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.scrollIntoView({ behavior: 'smooth' });
+                    postElement.classList.add('bg-blue-900', 'border-blue-600', 'border-2');
+                    
+                    setTimeout(() => {
+                        postElement.classList.remove('bg-blue-900', 'border-blue-600', 'border-2');
+                    }, 3000);
+                }
+            }, 500);
+        }
+
+        async function loadPosts(reset = false) {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            if (reset) {
+                currentPage = 1;
+                document.getElementById('postsContainer').innerHTML = '';
+            }
+            
+            try {
+                const response = await fetch(`/posts?page=${currentPage}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.posts.length === 0 && currentPage === 1) {
+                        document.getElementById('postsContainer').innerHTML = '<p class="text-center text-gray-500">Hali postlar mavjud emas</p>';
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    } else if (data.posts.length > 0) {
+                        renderPosts(data.posts);
+                        currentPage++;
+                    }
+                    
+                    if (data.posts.length < 10) {
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    } else {
+                        document.getElementById('loadMoreContainer').classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Postlarni yuklashda xatolik:', error);
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function renderPosts(posts, isSearchResult = false) {
+            const postsContainer = document.getElementById('postsContainer');
+            
+            // Premium stikerlar
+            const premiumStickers = ['💎', '👑', '✨', '🥇', '🎖️', '🔮', '🛡️', '⚡', '🌈', '🦄', '💰', '🏆'];
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'glass-card p-4 sm:p-5 rounded-2xl hover-animation';
+                postElement.setAttribute('data-post-id', post._id);
+                
+                let content = post.content;
+                if (isSearchResult && searchQuery) {
+                    content = highlightText(content, searchQuery);
+                }
+
+                // Premium stikerlarni wrap qilish
+                let processedContent = content;
+                premiumStickers.forEach(sticker => {
+                    const regex = new RegExp(escapeRegExp(sticker), 'g');
+                    processedContent = processedContent.replace(regex, `<span class="premium-sticker inline-block">${sticker}</span>`);
+                });
+
+                let userBadges = '';
+                if (post.userId.isPremium && (!post.userId.premiumExpiresAt || new Date(post.userId.premiumExpiresAt) > new Date())) {
+                    userBadges = '<span class="premium-badge ml-2">Premium</span>';
+                }
+
+                let postBadges = '';
+                if (post.isSponsored) {
+                    postBadges += '<span class="sponsor-badge text-xs px-2 py-1 rounded ml-2">Sponsor</span>';
+                }
+                if (post.boostLevel > 0) {
+                    postBadges += `<span class="boost-badge text-xs px-2 py-1 rounded ml-2">Boost x${post.boostLevel}</span>`;
+                }
+
+                const shortContent = post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content;
+                const escapedText = post.content.replace(/"/g, '&quot;');
+                const isPremiumUser = post.userId.isPremium && (!post.userId.premiumExpiresAt || new Date(post.userId.premiumExpiresAt) > new Date()) ? 'Premium' : '';
+                
+                postElement.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <img src="${post.userId.profilePic || 'https://via.placeholder.com/40'}" alt="Profile" class="w-10 h-10 rounded-full mr-3 flex-shrink-0">
+                        <div class="min-w-0 flex-1">
+                            <a href="/profile?id=${post.userId._id}" class="font-semibold hover:text-blue-400 transition-colors block truncate">${post.userId.fullName}</a>
+                            ${userBadges}
+                            <p class="text-gray-500 text-sm">@${post.userId.username}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="mb-4 break-words">${processedContent} ${postBadges}</p>
+                    
+                    ${post.media ? `
+                        <div class="mb-4 rounded-xl overflow-hidden">
+                            ${post.media.includes('.mp4') || post.media.includes('.webm') || post.media.includes('.ogg') 
+                                ? `<video src="${post.media}" controls class="w-full rounded-xl"></video>` 
+                                : `<img src="${post.media}" alt="Post media" class="w-full rounded-xl object-cover">`}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-6 text-gray-500 pt-3 post-actions">
+                        <button class="flex items-center space-x-1 like-btn ${post.likes.includes(sessionUserId) ? 'text-red-500' : 'hover:text-red-400'}" data-post-id="${post._id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="${post.likes.includes(sessionUserId) ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="${post.likes.includes(sessionUserId) ? '0' : '2'}" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>${post.likes.length}</span>
+                        </button>
+                        
+                        <button class="flex items-center space-x-1 comment-toggle-btn hover:text-blue-400" data-post-id="${post._id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>${post.comments.length}</span>
+                        </button>
+                        
+                        <button class="flex items-center space-x-1 hover:text-blue-400 share-btn" 
+                                data-post-id="${post._id}" 
+                                data-title="${post.userId.fullName} post qildi: ${shortContent}" 
+                                data-text="${escapedText}" 
+                                data-image="${post.media || ''}" 
+                                data-monetization="${isPremiumUser}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 border-t border-gray-700 pt-4 hidden comment-section" id="comments-${post._id}">
+                        <form class="mb-4 add-comment-form flex flex-col sm:flex-row gap-2" data-post-id="${post._id}">
+                            <input type="text" placeholder="Komment qo'shish..." class="glass-input flex-1 p-3 rounded-xl" required>
+                            <button type="submit" class="twitter-blue text-white px-3 py-3 rounded-xl text-sm hover:bg-blue-600 transition-colors w-full sm:w-auto">Yuborish</button>
+                        </form>
+                        
+                        <div class="space-y-3 post-comments">
+                            ${renderComments(post.comments, post._id)}
+                        </div>
+                    </div>
+                `;
+                
+                postsContainer.appendChild(postElement);
+            });
+            
+            // Event listeners
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const postId = this.getAttribute('data-post-id');
+                    
+                    try {
+                        const response = await fetch(`/posts/${postId}/like`, {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const likeCount = this.querySelector('span');
+                            likeCount.textContent = data.likes;
+                            
+                            if (this.classList.contains('text-red-500')) {
+                                this.classList.remove('text-red-500');
+                                this.querySelector('svg').setAttribute('fill', 'none');
+                                this.querySelector('svg').setAttribute('stroke-width', '2');
+                            } else {
+                                this.classList.add('text-red-500');
+                                this.querySelector('svg').setAttribute('fill', 'currentColor');
+                                this.querySelector('svg').setAttribute('stroke-width', '0');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Like qilishda xatolik:', error);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postId = this.getAttribute('data-post-id');
+                    const commentSection = document.getElementById(`comments-${postId}`);
+                    commentSection.classList.toggle('hidden');
+                });
+            });
+            
+            document.querySelectorAll('.add-comment-form').forEach(form => {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const postId = this.getAttribute('data-post-id');
+                    const content = this.querySelector('input').value;
+                    
+                    try {
+                        const response = await fetch(`/posts/${postId}/comment`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ content })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.querySelector('input').value = '';
+                            const commentsContainer = this.nextElementSibling;
+                            const commentElement = createCommentElement(data.comment, postId);
+                            commentsContainer.appendChild(commentElement);
+                            
+                            const commentBtn = document.querySelector(`.comment-toggle-btn[data-post-id="${postId}"] span`);
+                            commentBtn.textContent = parseInt(commentBtn.textContent) + 1;
+                        }
+                    } catch (error) {
+                        console.error('Komment qo\'shishda xatolik:', error);
+                    }
+                });
+            });
+        }
+
+        function renderComments(comments, postId) {
+            comments.sort((a, b) => b.likes.length - a.likes.length);
+            
+            let html = '';
+            
+            comments.forEach(comment => {
+                html += `
+                    <div class="border-l-2 border-gray-600 pl-3">
+                        <div class="flex items-center mb-1">
+                            <img src="${comment.userId.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-6 h-6 rounded-full mr-2 flex-shrink-0">
+                            <span class="font-semibold min-w-0 truncate">${comment.userId.fullName}</span>
+                            <span class="text-gray-500 text-sm ml-2">@${comment.userId.username}</span>
+                        </div>
+                        <p class="mb-2 break-words">${comment.content}</p>
+                        
+                        <div class="flex items-center space-x-3 text-sm text-gray-500">
+                            <button class="flex items-center space-x-1 comment-like-btn ${comment.likes.includes(sessionUserId) ? 'text-red-500' : 'hover:text-red-400'}" data-post-id="${postId}" data-comment-id="${comment._id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="${comment.likes.includes(sessionUserId) ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="${comment.likes.includes(sessionUserId) ? '0' : '2'}" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                                <span>${comment.likes.length}</span>
+                            </button>
+                            
+                            <button class="reply-toggle-btn hover:text-blue-400 transition-colors" data-comment-id="${comment._id}">Javob berish</button>
+                        </div>
+                        
+                        <form class="mt-2 mb-3 add-reply-form hidden flex flex-col sm:flex-row gap-2" data-post-id="${postId}" data-comment-id="${comment._id}">
+                            <input type="text" placeholder="Javob yozish..." class="glass-input flex-1 p-2 rounded-xl text-sm" required>
+                            <button type="submit" class="twitter-blue text-white px-2 py-2 rounded-xl text-xs hover:bg-blue-600 transition-colors w-full sm:w-auto">Yuborish</button>
+                        </form>
+                        
+                        <div class="mt-2 space-y-2">
+                            ${renderReplies(comment.replies, postId, comment._id)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html || '<p class="text-gray-500 text-sm">Hali kommentlar mavjud emas</p>';
+        }
+
+        function renderReplies(replies, postId, commentId) {
+            let html = '';
+            
+            replies.forEach(reply => {
+                html += `
+                    <div class="border-l-2 border-gray-700 pl-3">
+                        <div class="flex items-center mb-1">
+                            <img src="${reply.userId.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-6 h-6 rounded-full mr-2 flex-shrink-0">
+                            <span class="font-semibold min-w-0 truncate">${reply.userId.fullName}</span>
+                            <span class="text-gray-500 text-sm ml-2">@${reply.userId.username}</span>
+                        </div>
+                        <p class="mb-2 break-words">${reply.content}</p>
+                        
+                        <div class="flex items-center space-x-3 text-sm text-gray-500">
+                            <button class="flex items-center space-x-1 reply-like-btn ${reply.likes.includes(sessionUserId) ? 'text-red-500' : 'hover:text-red-400'}" data-post-id="${postId}" data-comment-id="${commentId}" data-reply-id="${reply._id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="${reply.likes.includes(sessionUserId) ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="${reply.likes.includes(sessionUserId) ? '0' : '2'}" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                                <span>${reply.likes.length}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+
+        // Comment va reply event listeners (renderPosts ichida qo'shilgan, lekin qo'shimcha uchun)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.comment-like-btn')) {
+                const btn = e.target.closest('.comment-like-btn');
+                const postId = btn.dataset.postId;
+                const commentId = btn.dataset.commentId;
+                
+                fetch(`/posts/${postId}/comments/${commentId}/like`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const likeCount = btn.querySelector('span');
+                            likeCount.textContent = data.likes;
+                            if (btn.classList.contains('text-red-500')) {
+                                btn.classList.remove('text-red-500');
+                                btn.querySelector('svg').setAttribute('fill', 'none');
+                                btn.querySelector('svg').setAttribute('stroke-width', '2');
+                            } else {
+                                btn.classList.add('text-red-500');
+                                btn.querySelector('svg').setAttribute('fill', 'currentColor');
+                                btn.querySelector('svg').setAttribute('stroke-width', '0');
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Like xatosi:', err));
+            }
+
+            if (e.target.closest('.reply-toggle-btn')) {
+                const btn = e.target.closest('.reply-toggle-btn');
+                const form = btn.parentElement.nextElementSibling;
+                form.classList.toggle('hidden');
+            }
+
+            if (e.target.closest('.add-reply-form')) {
+                const form = e.target.closest('.add-reply-form');
+                if (e.target.type === 'submit') {
+                    e.preventDefault();
+                    const postId = form.dataset.postId;
+                    const commentId = form.dataset.commentId;
+                    const content = form.querySelector('input').value;
+                    
+                    fetch(`/posts/${postId}/comments/${commentId}/reply`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                form.querySelector('input').value = '';
+                                form.classList.add('hidden');
+                                const repliesContainer = form.nextElementSibling;
+                                const replyElement = createReplyElement(data.reply, postId, commentId);
+                                repliesContainer.appendChild(replyElement);
+                            }
+                        })
+                        .catch(err => console.error('Reply xatosi:', err));
+                }
+            }
+
+            if (e.target.closest('.reply-like-btn')) {
+                const btn = e.target.closest('.reply-like-btn');
+                const postId = btn.dataset.postId;
+                const commentId = btn.dataset.commentId;
+                const replyId = btn.dataset.replyId;
+                
+                fetch(`/posts/${postId}/comments/${commentId}/replies/${replyId}/like`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const likeCount = btn.querySelector('span');
+                            likeCount.textContent = data.likes;
+                            if (btn.classList.contains('text-red-500')) {
+                                btn.classList.remove('text-red-500');
+                                btn.querySelector('svg').setAttribute('fill', 'none');
+                                btn.querySelector('svg').setAttribute('stroke-width', '2');
+                            } else {
+                                btn.classList.add('text-red-500');
+                                btn.querySelector('svg').setAttribute('fill', 'currentColor');
+                                btn.querySelector('svg').setAttribute('stroke-width', '0');
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Like xatosi:', err));
+            }
+        });
+
+        function createCommentElement(comment, postId) {
+            // Similar to renderComments, but dynamic
+            const div = document.createElement('div');
+            div.className = 'border-l-2 border-gray-600 pl-3';
+            div.innerHTML = `
+                <div class="flex items-center mb-1">
+                    <img src="${comment.userId.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-6 h-6 rounded-full mr-2 flex-shrink-0">
+                    <span class="font-semibold min-w-0 truncate">${comment.userId.fullName}</span>
+                    <span class="text-gray-500 text-sm ml-2">@${comment.userId.username}</span>
+                </div>
+                <p class="mb-2 break-words">${comment.content}</p>
+                
+                <div class="flex items-center space-x-3 text-sm text-gray-500">
+                    <button class="flex items-center space-x-1 comment-like-btn hover:text-red-400" data-post-id="${postId}" data-comment-id="${comment._id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>0</span>
+                    </button>
+                    
+                    <button class="reply-toggle-btn hover:text-blue-400 transition-colors" data-comment-id="${comment._id}">Javob berish</button>
+                </div>
+                
+                <form class="mt-2 mb-3 add-reply-form hidden flex flex-col sm:flex-row gap-2" data-post-id="${postId}" data-comment-id="${comment._id}">
+                    <input type="text" placeholder="Javob yozish..." class="glass-input flex-1 p-2 rounded-xl text-sm" required>
+                    <button type="submit" class="twitter-blue text-white px-2 py-2 rounded-xl text-xs hover:bg-blue-600 transition-colors w-full sm:w-auto">Yuborish</button>
+                </form>
+                
+                <div class="mt-2 space-y-2 replies-container"></div>
+            `;
+            return div;
+        }
+
+        function createReplyElement(reply, postId, commentId) {
+            const div = document.createElement('div');
+            div.className = 'border-l-2 border-gray-700 pl-3';
+            div.innerHTML = `
+                <div class="flex items-center mb-1">
+                    <img src="${reply.userId.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-6 h-6 rounded-full mr-2 flex-shrink-0">
+                    <span class="font-semibold min-w-0 truncate">${reply.userId.fullName}</span>
+                    <span class="text-gray-500 text-sm ml-2">@${reply.userId.username}</span>
+                </div>
+                <p class="mb-2 break-words">${reply.content}</p>
+                
+                <div class="flex items-center space-x-3 text-sm text-gray-500">
+                    <button class="flex items-center space-x-1 reply-like-btn hover:text-red-400" data-post-id="${postId}" data-comment-id="${commentId}" data-reply-id="${reply._id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>0</span>
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        function showMessage(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-button {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-button:hover {
+            background: rgba(50, 50, 50, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .twitter-blue {
+            background-color: #1DA1F2;
+        }
+        
+        .twitter-blue:hover {
+            background-color: #1a91da;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(29, 161, 242, 0.4);
+        }
+
+        .premium-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .sponsor-badge {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            color: #ffd700;
+        }
+
+        .boost-badge {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+
+        .balance-display {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .coins-display {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: #fbbf24;
+        }
+
+        .pending-badge {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            color: #f59e0b;
+        }
+
+        .approved-badge {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .rejected-badge {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+        
+        /* Animatsiyalar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        /* Table styles */
+        .glass-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .glass-table th {
+            background: rgba(30, 30, 30, 0.5);
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-table tr:hover {
+            background: rgba(50, 50, 50, 0.3);
+        }
+        
+        /* Statistic cards */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.6);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .stat-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            .glass-table {
+                min-width: 600px;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+        
+        /* Search input */
+        .search-input {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input:focus {
+            background: rgba(40, 40, 40, 0.7);
+            border-color: rgba(29, 161, 242, 0.6);
+            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="flex items-center">
+                    <svg class="w-8 h-8 text-blue-400 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.954 4.569c-.885.389-1.83.654-2.825.775 1.014-.611 1.794-1.574 2.163-2.723-.951.555-2.005.959-3.127 1.184-.896-.959-2.173-1.559-3.591-1.559-2.717 0-4.92 2.203-4.92 4.917 0 .39.045.765.127 1.124C7.691 8.094 4.066 6.13 1.64 3.161c-.427.722-.666 1.561-.666 2.475 0 1.71.87 3.213 2.188 4.096-.807-.026-1.566-.248-2.228-.616v.061c0 2.385 1.693 4.374 3.946 4.827-.413.111-.849.171-1.296.171-.314 0-.615-.03-.916-.086.631 1.953 2.445 3.377 4.604 3.417-1.68 1.319-3.809 2.105-6.102 2.105-.39 0-.779-.023-1.17-.067 2.189 1.394 4.768 2.209 7.557 2.209 9.054 0 14-7.503 14-14v-.617c.961-.689 1.8-1.56 2.46-2.548l-.047-.02z"/>
+                    </svg>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">NewEra Admin</span>
+                </div>
+                <div class="flex items-center space-x-4 nav-links">
+                    <a href="/" class="text-gray-300 hover:text-blue-400 px-3 py-1 rounded-full transition-colors">Asosiy</a>
+                    <a href="/profile" class="text-gray-300 hover:text-blue-400 px-3 py-1 rounded-full transition-colors">Profil</a>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 pt-24 pb-16">
+        <h1 class="text-2xl font-bold mb-8 text-white animate-fadeIn">Admin Statistikasi</h1>
+        
+        <!-- Statistikalar -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 stat-grid">
+            <div class="glass-card p-6 rounded-2xl stat-card animate-fadeIn">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-blue-900 bg-opacity-50 mr-4">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-semibold">Foydalanuvchilar</h2>
+                </div>
+                <p id="userCount" class="text-3xl font-bold">0</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-2xl stat-card animate-fadeIn" style="animation-delay: 0.1s;">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-green-900 bg-opacity-50 mr-4">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-semibold">Postlar</h2>
+                </div>
+                <p id="postCount" class="text-3xl font-bold">0</p>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl stat-card animate-fadeIn" style="animation-delay: 0.2s;">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-purple-900 bg-opacity-50 mr-4">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-semibold">Premium Foydalanuvchilar</h2>
+                </div>
+                <p id="premiumUsers" class="text-3xl font-bold">0</p>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl stat-card animate-fadeIn" style="animation-delay: 0.3s;">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-yellow-900 bg-opacity-50 mr-4">
+                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-semibold">Umumiy Daromad</h2>
+                </div>
+                <p id="totalEarnings" class="text-3xl font-bold">$0</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-2xl stat-card animate-fadeIn" style="animation-delay: 0.4s;">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-indigo-900 bg-opacity-50 mr-4">
+                        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-semibold">Eng ko'p obunachilar</h2>
+                </div>
+                <p id="topUser" class="text-xl font-bold">-</p>
+            </div>
+        </div>
+        
+        <!-- Eng ko'p obunachiga ega foydalanuvchilar -->
+        <div class="glass-card p-6 rounded-2xl mb-8 animate-fadeIn">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                </svg>
+                Eng ko'p obunachiga ega bo'lgan foydalanuvchilar
+            </h2>
+            <div class="table-container">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th class="rounded-l-xl">Foydalanuvchi</th>
+                            <th>Obunachilar</th>
+                            <th class="rounded-r-xl">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topUsersTable">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Foydalanuvchilarni boshqarish -->
+        <div class="glass-card p-6 rounded-2xl mb-8 animate-fadeIn">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Foydalanuvchilarni boshqarish
+                </h2>
+                <input type="text" id="userSearch" placeholder="Foydalanuvchi qidirish..." class="search-input px-3 py-2 rounded-xl w-64">
+            </div>
+            <div class="table-container">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th class="rounded-l-xl">Foydalanuvchi</th>
+                            <th>Email</th>
+                            <th>Premium</th>
+                            <th>Balans</th>
+                            <th>Coin</th>
+                            <th>Ro'yxatdan o'tgan sana</th>
+                            <th class="rounded-r-xl">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Postlarni boshqarish -->
+        <div class="glass-card p-6 rounded-2xl mb-8 animate-fadeIn">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Postlarni boshqarish
+            </h2>
+            <div class="table-container">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th class="rounded-l-xl">Muallif</th>
+                            <th>Matn</th>
+                            <th>Sponsor</th>
+                            <th>Boost</th>
+                            <th>Sana</th>
+                            <th>Likelar</th>
+                            <th class="rounded-r-xl">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postsTable">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- To'lov so'rovlarni boshqarish -->
+        <div class="glass-card p-6 rounded-2xl mb-8 animate-fadeIn">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+                To'lov so'rovlarni boshqarish
+            </h2>
+            <div class="table-container">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th class="rounded-l-xl">Foydalanuvchi</th>
+                            <th>Turi</th>
+                            <th>Miqdor</th>
+                            <th>Screenshot</th>
+                            <th>Holati</th>
+                            <th>Sana</th>
+                            <th class="rounded-r-xl">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTable">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pul chiqarish so'rovlarni boshqarish -->
+        <div class="glass-card p-6 rounded-2xl animate-fadeIn">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+                Pul chiqarish so'rovlarni boshqarish
+            </h2>
+            <div class="table-container">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th class="rounded-l-xl">Foydalanuvchi</th>
+                            <th>Miqdor</th>
+                            <th>QQS (5%)</th>
+                            <th>Net miqdor</th>
+                            <th>Karta</th>
+                            <th>Holati</th>
+                            <th>Sana</th>
+                            <th class="rounded-r-xl">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalsTable">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sponsor post modali -->
+    <div id="sponsorModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4 text-white">Postni sponsor qilish</h2>
+            <div class="mb-4">
+                <label for="sponsorPrice" class="block text-sm font-medium text-gray-300">Narx ($)</label>
+                <input type="number" id="sponsorPrice" min="1" step="0.01" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="closeSponsorModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-700 transition-colors">Bekor qilish</button>
+                <button id="confirmSponsor" class="twitter-blue text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors">Sponsor qilish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPostId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chiqish
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                try {
+                    await fetch('/logout', { method: 'POST' });
+                    window.location.href = '/register-login.html';
+                } catch (error) {
+                    console.error('Chiqishda xatolik:', error);
+                }
+            });
+            
+            // Statistikani yuklash
+            loadStats();
+            
+            // Foydalanuvchilarni yuklash
+            loadUsers();
+            
+            // Postlarni yuklash
+            loadPosts();
+
+            // To'lov so'rovlarni yuklash
+            loadPayments();
+
+            // Pul chiqarish so'rovlarni yuklash
+            loadWithdrawals();
+
+            // Sponsor modal
+            setupSponsorModal();
+
+            // Foydalanuvchi qidirish
+            setupUserSearch();
+        });
+
+        function setupUserSearch() {
+            const searchInput = document.getElementById('userSearch');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#usersTable tr');
+                rows.forEach(row => {
+                    const userName = row.querySelector('.font-semibold').textContent.toLowerCase();
+                    const userEmail = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function setupSponsorModal() {
+            const modal = document.getElementById('sponsorModal');
+            document.getElementById('closeSponsorModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('confirmSponsor').addEventListener('click', () => sponsorPost());
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        async function sponsorPost() {
+            const price = parseFloat(document.getElementById('sponsorPrice').value);
+            if (!price || price <= 0) return alert('To\'g\'ri narx kiriting');
+            try {
+                const response = await fetch(`/posts/${currentPostId}/sponsor`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ price })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Post sponsor qilindi', 'success');
+                    document.getElementById('sponsorModal').classList.add('hidden');
+                    loadPosts();
+                    loadStats();
+                } else {
+                    showMessage('Sponsor xatosi: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Sponsor xatosi', 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('userCount').textContent = data.stats.userCount;
+                    document.getElementById('postCount').textContent = data.stats.postCount;
+                    document.getElementById('premiumUsers').textContent = data.stats.premiumUsers;
+                    document.getElementById('totalEarnings').textContent = `$${data.stats.totalEarnings}`;
+                    
+                    if (data.stats.topUsers.length > 0) {
+                        document.getElementById('topUser').textContent = `${data.stats.topUsers[0].fullName} (${data.stats.topUsers[0].followersCount})`;
+                    }
+                    
+                    // Top foydalanuvchilar jadvali
+                    const topUsersTable = document.getElementById('topUsersTable');
+                    topUsersTable.innerHTML = '';
+                    
+                    data.stats.topUsers.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-800 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3">
+                                <div class="flex items-center">
+                                    <img src="${user.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-3 border border-gray-600">
+                                    <div>
+                                        <div class="font-semibold">${user.fullName}</div>
+                                        <div class="text-gray-400 text-sm">@${user.username}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">
+                                <span class="bg-blue-900 bg-opacity-50 text-blue-300 py-1 px-2 rounded-full text-sm">
+                                    ${user.followersCount} obunachi
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <button class="text-red-400 hover:text-red-300 text-sm delete-user-btn transition-colors" data-user-id="${user._id}">
+                                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    O'chirish
+                                </button>
+                            </td>
+                        `;
+                        
+                        topUsersTable.appendChild(row);
+                    });
+                    
+                    // Foydalanuvchini o'chirish
+                    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const userId = this.getAttribute('data-user-id');
+                            const userName = this.closest('tr').querySelector('.font-semibold').textContent;
+                            const confirmDelete = confirm(`${userName} foydalanuvchisini o'chirishni istaysizmi?`);
+                            
+                            if (confirmDelete) {
+                                try {
+                                    const response = await fetch(`/admin/users/${userId}`, {
+                                        method: 'DELETE'
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        this.closest('tr').remove();
+                                        loadStats(); // Statistikani yangilash
+                                    } else {
+                                        alert('Foydalanuvchini o\'chirishda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Foydalanuvchini o\'chirishda xatolik');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Statistikani yuklashda xatolik:', error);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/admin/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const usersTable = document.getElementById('usersTable');
+                    usersTable.innerHTML = '';
+                    
+                    data.users.forEach(user => {
+                        const premiumBadge = user.isPremium && (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date()) 
+                            ? '<span class="premium-badge">Premium</span>' : 'Oddiy';
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-800 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3">
+                                <div class="flex items-center">
+                                    <img src="${user.profilePic || 'https://via.placeholder.com/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-3 border border-gray-600">
+                                    <div>
+                                        <div class="font-semibold">${user.fullName}</div>
+                                        <div class="text-gray-400 text-sm">@${user.username}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">${user.email}</td>
+                            <td class="py-3">${premiumBadge}</td>
+                            <td class="py-3"><span class="balance-display px-2 py-1 rounded-full text-sm">$${user.balance || 0}</span></td>
+                            <td class="py-3"><span class="coins-display px-2 py-1 rounded-full text-sm">${user.coins || 0}</span></td>
+                            <td class="py-3">${new Date(user.createdAt).toLocaleDateString('uz-UZ')}</td>
+                            <td class="py-3">
+                                <button class="text-red-400 hover:text-red-300 text-sm delete-user-btn transition-colors" data-user-id="${user._id}">
+                                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    O'chirish
+                                </button>
+                            </td>
+                        `;
+                        
+                        usersTable.appendChild(row);
+                    });
+                    
+                    // Foydalanuvchini o'chirish
+                    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const userId = this.getAttribute('data-user-id');
+                            const userName = this.closest('tr').querySelector('.font-semibold').textContent;
+                            const confirmDelete = confirm(`${userName} foydalanuvchisini o'chirishni istaysizmi?`);
+                            
+                            if (confirmDelete) {
+                                try {
+                                    const response = await fetch(`/admin/users/${userId}`, {
+                                        method: 'DELETE'
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        this.closest('tr').remove();
+                                        loadStats(); // Statistikani yangilash
+                                    } else {
+                                        alert('Foydalanuvchini o\'chirishda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Foydalanuvchini o\'chirishda xatolik');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Foydalanuvchilarni yuklashda xatolik:', error);
+            }
+        }
+
+        async function loadPosts() {
+            try {
+                const response = await fetch('/admin/posts');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const postsTable = document.getElementById('postsTable');
+                    postsTable.innerHTML = '';
+                    
+                    data.posts.forEach(post => {
+                        const sponsorBadge = post.isSponsored ? `<span class="sponsor-badge text-xs px-2 py-1 rounded">Sponsor ($${post.sponsorPrice})</span>` : 
+                            `<button class="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-500" onclick="openSponsorModal('${post._id}')">Sponsor qilish</button>`;
+                        
+                        const boostBadge = post.boostLevel > 0 ? `<span class="boost-badge text-xs px-2 py-1 rounded">x${post.boostLevel}</span>` : '-';
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-800 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3">
+                                <div class="font-semibold">${post.userId.fullName}</div>
+                                <div class="text-gray-400 text-sm">@${post.userId.username}</div>
+                            </td>
+                            <td class="py-3">${post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}</td>
+                            <td class="py-3">${sponsorBadge}</td>
+                            <td class="py-3">${boostBadge}</td>
+                            <td class="py-3">${new Date(post.createdAt).toLocaleDateString('uz-UZ')}</td>
+                            <td class="py-3">
+                                <span class="bg-red-900 bg-opacity-50 text-red-300 py-1 px-2 rounded-full text-sm">
+                                    ${post.likes.length} like
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <button class="text-red-400 hover:text-red-300 text-sm delete-post-btn transition-colors" data-post-id="${post._id}">
+                                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    O'chirish
+                                </button>
+                            </td>
+                        `;
+                        
+                        postsTable.appendChild(row);
+                    });
+                    
+                    // Postni o'chirish
+                    document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const postId = this.getAttribute('data-post-id');
+                            const postContent = this.closest('tr').querySelector('td:nth-child(2)').textContent;
+                            const confirmDelete = confirm(`"${postContent}" postini o'chirishni istaysizmi?`);
+                            
+                            if (confirmDelete) {
+                                try {
+                                    const response = await fetch(`/admin/posts/${postId}`, {
+                                        method: 'DELETE'
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        this.closest('tr').remove();
+                                        loadStats(); // Statistikani yangilash
+                                    } else {
+                                        alert('Postni o\'chirishda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Postni o\'chirishda xatolik');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Postlarni yuklashda xatolik:', error);
+            }
+        }
+
+        async function loadPayments() {
+            try {
+                const response = await fetch('/admin/payments');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const paymentsTable = document.getElementById('paymentsTable');
+                    paymentsTable.innerHTML = '';
+                    
+                    data.payments.forEach(payment => {
+                        const typeDisplay = payment.type === 'balance' ? 'Balans' : payment.type === 'coins' ? 'Coin' : 'Premium';
+                        const amountDisplay = payment.type === 'coins' ? `${payment.amount} coins` : `$${payment.amount}`;
+                        
+                        let statusBadge = '';
+                        if (payment.status === 'pending') {
+                            statusBadge = '<span class="pending-badge text-xs px-2 py-1 rounded">Kutilmoqda</span>';
+                        } else if (payment.status === 'approved') {
+                            statusBadge = '<span class="approved-badge text-xs px-2 py-1 rounded">Tasdiqlandi</span>';
+                        } else {
+                            statusBadge = '<span class="rejected-badge text-xs px-2 py-1 rounded">Rad etildi</span>';
+                        }
+                        
+                        let actions = '';
+                        if (payment.status === 'pending') {
+                            actions = `
+                                <button class="text-green-400 hover:text-green-300 text-sm approve-btn transition-colors mr-2" data-payment-id="${payment._id}">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Tasdiqlash
+                                </button>
+                                <button class="text-red-400 hover:text-red-300 text-sm reject-btn transition-colors" data-payment-id="${payment._id}">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Rad etish
+                                </button>
+                            `;
+                        } else {
+                            actions = `<span class="text-gray-400 text-sm">Yakunlangan</span>`;
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-800 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3">
+                                <div class="font-semibold">${payment.userId.fullName}</div>
+                                <div class="text-gray-400 text-sm">@${payment.userId.username}</div>
+                            </td>
+                            <td class="py-3">${typeDisplay}</td>
+                            <td class="py-3">${amountDisplay}</td>
+                            <td class="py-3">
+                                <img src="${payment.screenshot}" alt="Screenshot" class="w-12 h-12 object-cover rounded border border-gray-600">
+                            </td>
+                            <td class="py-3">${statusBadge}</td>
+                            <td class="py-3">${new Date(payment.createdAt).toLocaleDateString('uz-UZ')}</td>
+                            <td class="py-3">${actions}</td>
+                        `;
+                        
+                        paymentsTable.appendChild(row);
+                    });
+                    
+                    // Tasdiqlash/reject eventlar
+                    document.querySelectorAll('.approve-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const paymentId = this.getAttribute('data-payment-id');
+                            const notes = prompt('Izoh kiriting (ixtiyoriy):');
+                            
+                            if (notes !== null) {
+                                try {
+                                    const response = await fetch(`/admin/payments/${paymentId}/approve`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ notes: notes || '' })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        showMessage('To\'lov tasdiqlandi', 'success');
+                                        loadPayments();
+                                    } else {
+                                        alert('Tasdiqlashda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Tasdiqlashda xatolik');
+                                }
+                            }
+                        });
+                    });
+                    
+                    document.querySelectorAll('.reject-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const paymentId = this.getAttribute('data-payment-id');
+                            const notes = prompt('Rad etish izohi (ixtiyoriy):');
+                            
+                            if (notes !== null) {
+                                try {
+                                    const response = await fetch(`/admin/payments/${paymentId}/reject`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ notes: notes || '' })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        showMessage('To\'lov rad etildi', 'success');
+                                        loadPayments();
+                                    } else {
+                                        alert('Rad etishda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Rad etishda xatolik');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('To\'lov so\'rovlarni yuklashda xatolik:', error);
+            }
+        }
+
+        async function loadWithdrawals() {
+            try {
+                const response = await fetch('/admin/withdrawals');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const withdrawalsTable = document.getElementById('withdrawalsTable');
+                    withdrawalsTable.innerHTML = '';
+                    
+                    data.withdrawals.forEach(withdrawal => {
+                        const cardMasked = withdrawal.cardNumber.replace(/(\d{4})(?=\d)/g, '****');
+                        
+                        let statusBadge = '';
+                        if (withdrawal.status === 'pending') {
+                            statusBadge = '<span class="pending-badge text-xs px-2 py-1 rounded">Kutilmoqda</span>';
+                        } else if (withdrawal.status === 'approved') {
+                            statusBadge = '<span class="approved-badge text-xs px-2 py-1 rounded">Tasdiqlandi</span>';
+                        } else {
+                            statusBadge = '<span class="rejected-badge text-xs px-2 py-1 rounded">Rad etildi</span>';
+                        }
+                        
+                        let actions = '';
+                        if (withdrawal.status === 'pending') {
+                            actions = `
+                                <button class="text-green-400 hover:text-green-300 text-sm approve-btn transition-colors mr-2" data-withdrawal-id="${withdrawal._id}">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Tasdiqlash
+                                </button>
+                                <button class="text-red-400 hover:text-red-300 text-sm reject-btn transition-colors" data-withdrawal-id="${withdrawal._id}">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Rad etish
+                                </button>
+                            `;
+                        } else {
+                            actions = `<span class="text-gray-400 text-sm">Yakunlangan</span>`;
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-800 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3">
+                                <div class="font-semibold">${withdrawal.userId.fullName}</div>
+                                <div class="text-gray-400 text-sm">@${withdrawal.userId.username}</div>
+                            </td>
+                            <td class="py-3">$${withdrawal.amount}</td>
+                            <td class="py-3">$${withdrawal.tax}</td>
+                            <td class="py-3">$${withdrawal.netAmount}</td>
+                            <td class="py-3">${cardMasked}</td>
+                            <td class="py-3">${statusBadge}</td>
+                            <td class="py-3">${new Date(withdrawal.createdAt).toLocaleDateString('uz-UZ')}</td>
+                            <td class="py-3">${actions}</td>
+                        `;
+                        
+                        withdrawalsTable.appendChild(row);
+                    });
+                    
+                    // Tasdiqlash/reject eventlar
+                    document.querySelectorAll('.approve-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const withdrawalId = this.getAttribute('data-withdrawal-id');
+                            const notes = prompt('Izoh kiriting (ixtiyoriy):');
+                            
+                            if (notes !== null) {
+                                try {
+                                    const response = await fetch(`/admin/withdrawals/${withdrawalId}/approve`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ notes: notes || '' })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        showMessage('Pul chiqarish tasdiqlandi', 'success');
+                                        loadWithdrawals();
+                                    } else {
+                                        alert('Tasdiqlashda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Tasdiqlashda xatolik');
+                                }
+                            }
+                        });
+                    });
+                    
+                    document.querySelectorAll('.reject-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const withdrawalId = this.getAttribute('data-withdrawal-id');
+                            const notes = prompt('Rad etish izohi (ixtiyoriy):');
+                            
+                            if (notes !== null) {
+                                try {
+                                    const response = await fetch(`/admin/withdrawals/${withdrawalId}/reject`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ notes: notes || '' })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        showMessage('Pul chiqarish rad etildi', 'success');
+                                        loadWithdrawals();
+                                    } else {
+                                        alert('Rad etishda xatolik: ' + data.message);
+                                    }
+                                } catch (error) {
+                                    console.error('Xatolik:', error);
+                                    alert('Rad etishda xatolik');
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Pul chiqarish so\'rovlarni yuklashda xatolik:', error);
+            }
+        }
+
+        function openSponsorModal(postId) {
+            currentPostId = postId;
+            document.getElementById('sponsorModal').classList.remove('hidden');
+            document.getElementById('sponsorPrice').value = '';
+        }
+
+        function showMessage(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

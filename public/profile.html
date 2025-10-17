@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Profil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-input {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .glass-input:focus {
+            background: rgba(40, 40, 40, 0.7);
+            border-color: rgba(29, 161, 242, 0.6);
+            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+        }
+        
+        .glass-button {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-button:hover {
+            background: rgba(50, 50, 50, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Twitter uslubidagi ranglar */
+        .twitter-blue {
+            background-color: #1DA1F2;
+        }
+        
+        .twitter-blue:hover {
+            background-color: #1a91da;
+        }
+
+        .premium-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .balance-display {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .coins-display {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: #fbbf24;
+        }
+        
+        /* Scrollbar dizayni */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.6);
+        }
+        
+        /* Animatsiyalar */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Twitterga o'xshash hover effektlari */
+        .hover-animation {
+            transition: background-color 0.2s ease;
+        }
+        
+        .hover-animation:hover {
+            background-color: rgba(30, 30, 30, 0.6);
+        }
+        
+        /* Xabar tarixi uchun scrollbar */
+        #messageHistory {
+            scrollbar-width: thin;
+            scrollbar-color: #4a5568 #2d3748;
+        }
+        
+        #messageHistory::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #messageHistory::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 3px;
+        }
+        
+        #messageHistory::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 3px;
+        }
+        
+        /* Tahrirlash modali uchun yangi style */
+        #edit-modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Mobil moslashuvchanlik */
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-stats {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .profile-stats > div {
+                margin: 0.5rem;
+                min-width: 80px;
+            }
+            
+            .post-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .modal-content {
+                width: 95% !important;
+                margin: 1rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .action-buttons button {
+                width: 100%;
+            }
+        }
+
+        .unread-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="text-xl font-bold">
+                    <a href="/" class="flex items-center">
+                        <img src="./uploads/icon.png" alt="NewEra Logo" class="h-8 mr-2 filter brightness-125">
+                        <span class="hidden sm:inline"></span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="text-gray-300 hover:text-blue-400 hover-animation px-3 py-1 rounded-full text-sm md:text-base">Asosiy</a>
+                    <a href="/admin" class="text-gray-300 hover:text-blue-400 hover-animation px-3 py-1 rounded-full text-sm md:text-base">Admin</a>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-3 py-2 rounded-full hover:bg-red-600 transition-colors text-sm md:text-base">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-16">
+        <!-- Loading holati -->
+        <div id="loading" class="text-center py-8">
+            <p class="text-gray-500">Yuklanmoqda...</p>
+        </div>
+
+        <!-- Profil ma'lumotlari -->
+        <div id="profileContent" class="hidden">
+            <div class="glass-card p-6 rounded-2xl shadow-xl mb-6">
+                <div class="flex items-center mb-6 profile-header">
+                    <img id="profilePic" src="https://via.placeholder.com/100" alt="Profile" class="w-20 h-20 md:w-24 md:h-24 rounded-full mr-4 md:mr-6 object-cover border-2 border-gray-600">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <h1 id="profileName" class="text-xl md:text-2xl font-bold"></h1>
+                            <span id="premiumBadge" class="ml-2 hidden premium-badge">Premium</span>
+                        </div>
+                        <p id="profileUsername" class="text-gray-400 text-sm md:text-base"></p>
+                        <p id="profileBio" class="mt-2 text-gray-300 text-sm md:text-base"></p>
+                        
+                        <div class="flex mt-4 space-x-4 md:space-x-6 profile-stats">
+                            <div class="text-center">
+                                <span class="font-semibold block text-white" id="postCount">0</span>
+                                <p class="text-gray-400 text-xs md:text-sm">Postlar</p>
+                            </div>
+                            <div class="text-center">
+                                <span class="font-semibold block text-white" id="followerCount">0</span>
+                                <p class="text-gray-400 text-xs md:text-sm">Obunachilar</p>
+                            </div>
+                            <div class="text-center">
+                                <span class="font-semibold block text-white" id="followingCount">0</span>
+                                <p class="text-gray-400 text-xs md:text-sm">Obunalar</p>
+                            </div>
+                            <div class="text-center">
+                                <span class="font-semibold block text-white" id="totalLikes">0</span>
+                                <p class="text-gray-400 text-xs md:text-sm">Likelar</p>
+                            </div>
+                            <div id="earningsStat" class="text-center hidden">
+                                <span class="font-semibold block text-white" id="earnings">0</span>
+                                <p class="text-gray-400 text-xs md:text-sm">Daromad</p>
+                            </div>
+                            <div id="balanceDisplay" class="text-center hidden balance-display px-2 py-1 rounded-full">
+                                <span class="font-semibold block text-white" id="balance">$0</span>
+                                <p class="text-xs">Balans</p>
+                            </div>
+                            <div id="coinsDisplay" class="text-center hidden coins-display px-2 py-1 rounded-full">
+                                <span class="font-semibold block text-white" id="coins">0</span>
+                                <p class="text-xs">Coin</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Harakatlar tugmalari -->
+                <div id="actionButtons" class="mt-4 flex flex-wrap gap-2 action-buttons">
+                    <!-- JavaScript orqali to'ldiriladi -->
+                </div>
+            </div>
+
+            <!-- Suhbatlar bo'limi (faqat o'z profilida) -->
+            <div id="conversationsSection" class="glass-card p-6 rounded-2xl shadow-xl mb-6 hidden">
+                <h2 class="text-xl font-semibold mb-4 text-white">Suhbatlar</h2>
+                <div id="conversationsList" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Suhbatlar JavaScript orqali yuklanadi -->
+                </div>
+            </div>
+
+            <!-- Postlar -->
+            <h2 class="text-xl font-semibold mb-4 text-white">Postlar</h2>
+            <div id="userPosts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 post-grid">
+                <!-- Foydalanuvchi postlari JavaScript orqali yuklanadi -->
+            </div>
+
+            <!-- Post yo'q -->
+            <div id="noPosts" class="glass-card p-6 rounded-2xl text-center hidden">
+                <p class="text-gray-400">Hali postlar mavjud emas</p>
+            </div>
+        </div>
+
+        <!-- Xatolik xabari -->
+        <div id="errorMessage" class="bg-red-900 bg-opacity-70 border border-red-700 text-red-200 px-4 py-3 rounded-xl hidden backdrop-blur-sm">
+            <!-- Xato xabari -->
+        </div>
+    </div>
+
+    <!-- Tahrirlash formasi (modal) -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Profilni tahrirlash</h2>
+            <form id="editProfileForm">
+                <div class="mb-4">
+                    <label for="editFullName" class="block text-sm font-medium text-gray-300">To'liq ism</label>
+                    <input type="text" id="editFullName" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl">
+                </div>
+                <div class="mb-4">
+                    <label for="editBio" class="block text-sm font-medium text-gray-300">Bio</label>
+                    <textarea id="editBio" rows="3" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="editProfilePic" class="block text-sm font-medium text-gray-300">Profil rasmi</label>
+                    <input type="file" id="editProfilePic" accept="image/*" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl">
+                    <p class="text-xs text-gray-400 mt-1">Faqat rasm fayllari. Maksimum hajm: 5MB</p>
+                </div>
+                <div class="flex justify-end space-x-2 flex-wrap">
+                    <button type="button" id="cancelEditBtn" class="glass-button text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-700 transition-colors mt-2 sm:mt-0">Bekor qilish</button>
+                    <button type="submit" class="twitter-blue text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors mt-2 sm:mt-0">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Premium obuna modali -->
+    <div id="premiumModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Premium obuna</h2>
+            <div class="space-y-4 mb-4">
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold">Oylik: $9.99</h3>
+                    <p class="text-gray-400 text-sm">Reklamasiz, cheksiz story, ko'proq ko'rishlar.</p>
+                    <button id="subscribeMonthly" class="twitter-blue text-white px-4 py-2 rounded-xl mt-2 w-full">Obuna olish</button>
+                </div>
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold">Yillik: $99.99</h3>
+                    <p class="text-gray-400 text-sm">20% chegirma, barcha premium imkoniyatlar.</p>
+                    <button id="subscribeYearly" class="twitter-blue text-white px-4 py-2 rounded-xl mt-2 w-full">Obuna olish</button>
+                </div>
+            </div>
+            <button id="closePremiumModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl w-full">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- Coin sotib olish modali -->
+    <div id="coinsModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Coin sotib olish</h2>
+            <div class="space-y-4 mb-4">
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold">100 Coin - $5</h3>
+                    <p class="text-gray-400 text-sm">Post boost uchun.</p>
+                    <button id="buy100Coins" class="twitter-blue text-white px-4 py-2 rounded-xl mt-2 w-full">Sotib olish</button>
+                </div>
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold">500 Coin - $20</h3>
+                    <p class="text-gray-400 text-sm">Katta paket.</p>
+                    <button id="buy500Coins" class="twitter-blue text-white px-4 py-2 rounded-xl mt-2 w-full">Sotib olish</button>
+                </div>
+            </div>
+            <button id="closeCoinsModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl w-full">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- Balans to'ldirish modali -->
+    <div id="depositModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Balans to'ldirish</h2>
+            <div class="mb-4">
+                <label for="depositAmount" class="block text-sm font-medium text-gray-300">Miqdor ($)</label>
+                <input type="number" id="depositAmount" min="1" step="0.01" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl">
+            </div>
+            <button id="depositBtn" class="twitter-blue text-white px-4 py-2 rounded-xl w-full">To'ldirish so'rovi yuborish</button>
+            <button id="closeDepositModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl mt-2 w-full">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- To'lov so'rovi modali -->
+    <div id="paymentRequestModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">To'lov so'rovi yuborish</h2>
+            <form id="paymentRequestForm">
+                <input type="hidden" id="requestType" name="type">
+                <input type="hidden" id="requestAmount" name="amount">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300">Turi</label>
+                    <input type="text" id="requestTypeDisplay" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl bg-gray-800" readonly>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300">Miqdor</label>
+                    <input type="text" id="requestAmountDisplay" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl bg-gray-800" readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="screenshot" class="block text-sm font-medium text-gray-300">To'lov screenshoti (majburiy)</label>
+                    <input type="file" id="screenshot" name="screenshot" accept="image/*" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl" required>
+                    <p class="text-xs text-gray-400 mt-1">To'lov qilingan screenshotni yuklang</p>
+                </div>
+                <div class="mb-4">
+                    <label for="requestNotes" class="block text-sm font-medium text-gray-300">Izoh (ixtiyoriy)</label>
+                    <textarea id="requestNotes" rows="2" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl" placeholder="Qo'shimcha izohlar..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 flex-wrap">
+                    <button type="button" id="closeRequestModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-700 transition-colors mt-2 sm:mt-0">Bekor qilish</button>
+                    <button type="submit" class="twitter-blue text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors mt-2 sm:mt-0">So'rov yuborish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- O'yinlar modali -->
+    <div id="gamesModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">O'yinlar</h2>
+            <div class="space-y-4 mb-4">
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold mb-2">Kunlik mukofot</h3>
+                    <p class="text-gray-400 text-sm mb-3">Bugun 10 coin oling!</p>
+                    <button id="dailyRewardBtn" class="twitter-blue text-white px-4 py-2 rounded-xl w-full">Mukofot olish</button>
+                </div>
+                <div class="border border-gray-600 rounded-xl p-3">
+                    <h3 class="font-semibold mb-2">Tangalar otish</h3>
+                    <p class="text-gray-400 text-sm mb-3">50% yutish imkoniyati. Miqdor kiriting:</p>
+                    <input type="number" id="betAmount" min="1" class="glass-input w-full px-3 py-2 rounded-xl mb-3" placeholder="Coin miqdori">
+                    <button id="coinFlipBtn" class="twitter-blue text-white px-4 py-2 rounded-xl w-full">O'tish</button>
+                </div>
+            </div>
+            <button id="closeGamesModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl w-full">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- Balans yechish modali -->
+    <div id="withdrawalModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Balans yechish (5% QQS)</h2>
+            <div class="mb-4">
+                <label for="withdrawAmount" class="block text-sm font-medium text-gray-300">Miqdor ($)</label>
+                <input type="number" id="withdrawAmount" min="1" step="0.01" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl">
+            </div>
+            <div class="mb-4">
+                <label for="cardNumber" class="block text-sm font-medium text-gray-300">Karta raqami</label>
+                <input type="text" id="cardNumber" maxlength="16" class="glass-input mt-1 block w-full px-3 py-2 rounded-xl" placeholder="1234 5678 9012 3456">
+            </div>
+            <button id="withdrawBtn" class="twitter-blue text-white px-4 py-2 rounded-xl w-full">Yechish so'rovi yuborish</button>
+            <button id="closeWithdrawalModal" class="glass-button text-gray-300 px-4 py-2 rounded-xl mt-2 w-full">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- Post tahrirlash modali -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <h2 class="text-xl font-semibold mb-4 text-white">Postni tahrirlash</h2>
+            <textarea id="edit-content" rows="4" class="glass-input w-full px-3 py-2 rounded-xl mb-4"></textarea>
+            <div class="flex justify-end space-x-2 flex-wrap">
+                <button type="button" id="cancel-edit" class="glass-button text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-700 transition-colors mt-2 sm:mt-0">Bekor qilish</button>
+                <button type="button" id="save-edit" class="twitter-blue text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors mt-2 sm:mt-0">Saqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Xabar yuborish modali -->
+    <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 animate-fadeIn">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md mx-4 modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-white" id="messageModalTitle">Xabar yuborish</h2>
+                <button id="closeMessageModal" class="text-gray-400 hover:text-white transition-colors bg-transparent rounded-full p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <div class="flex items-center mb-3">
+                    <img id="messageUserPic" src="" alt="Profile" class="w-10 h-10 rounded-full mr-3 border border-gray-600">
+                    <div>
+                        <p id="messageUserName" class="font-semibold text-white"></p>
+                        <p id="messageUserUsername" class="text-gray-400 text-sm"></p>
+                    </div>
+                </div>
+                
+                <div id="messageHistory" class="h-64 overflow-y-auto border border-gray-700 rounded-xl p-3 mb-3 bg-gray-900 bg-opacity-50">
+                    <!-- Xabarlar shu yerda ko'rsatiladi -->
+                    <div class="text-center text-gray-400 py-8">Xabarlar yuklanmoqda...</div>
+                </div>
+                
+                <form id="sendMessageForm" class="flex">
+                    <input type="number" id="tipAmount" placeholder="Tip ($)" min="0" step="0.01" class="glass-input w-20 px-3 py-2 rounded-l-xl mr-2">
+                    <input type="text" id="messageInput" placeholder="Xabar yozing..." class="glass-input flex-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    <button type="submit" class="twitter-blue text-white px-4 py-2 rounded-r-xl hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+        let isOwnProfile = false;
+        let sessionUserId = null;
+        let currentChatUser = null;
+        let messageInterval = null;
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            setupMessageModal();
+            setupEditModal();
+            setupPremiumModal();
+            setupCoinsModal();
+            setupDepositModal();
+            setupPaymentRequestModal();
+            setupGamesModal();
+            setupWithdrawalModal();
+        });
+
+        async function initializePage() {
+            // Session ma'lumotlarini olish
+            try {
+                const response = await fetch('/user/me');
+                
+                if (response.status === 401) {
+                    window.location.href = '/register-login.html';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    sessionUserId = data.user._id;
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const userId = urlParams.get('id');
+                    currentUserId = userId || sessionUserId;
+                    
+                    document.getElementById('logoutBtn').addEventListener('click', async () => {
+                        try {
+                            await fetch('/logout', { method: 'POST' });
+                            window.location.href = '/register-login.html';
+                        } catch (error) {
+                            console.error('Chiqishda xatolik:', error);
+                            showError('Chiqishda xatolik yuz berdi');
+                        }
+                    });
+                    
+                    await loadProfile(currentUserId);
+                    await loadUserPosts(currentUserId);
+                    setupModal();
+                    
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('profileContent').classList.remove('hidden');
+                } else {
+                    showError('Server xatosi: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Session ma\'lumotlarini olishda xatolik:', error);
+                showError('Serverga ulanishda xatolik. Iltimos, qayta urunib ko\'ring.');
+            }
+        }
+
+        async function loadProfile(userId) {
+            try {
+                const response = await fetch(`/user/${userId}`);
+                
+                if (response.status === 404) {
+                    showError('Foydalanuvchi topilmadi');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const user = data.user;
+                    
+                    document.getElementById('profilePic').src = user.profilePic || 'https://via.placeholder.com/100';
+                    document.getElementById('profileName').textContent = user.fullName;
+                    document.getElementById('profileUsername').textContent = `@${user.username}`;
+                    document.getElementById('profileBio').textContent = user.bio || 'Bio mavjud emas';
+                    document.getElementById('postCount').textContent = user.postCount;
+                    document.getElementById('followerCount').textContent = user.followers.length;
+                    document.getElementById('followingCount').textContent = user.following.length;
+                    document.getElementById('totalLikes').textContent = user.totalLikes;
+                    
+                    document.getElementById('editFullName').value = user.fullName;
+                    document.getElementById('editBio').value = user.bio || '';
+                    
+                    // Monetizatsiya ma'lumotlari (faqat o'z profilida)
+                    if (isOwnProfile || userId === sessionUserId) {
+                        const meData = currentUser;
+                        document.getElementById('earnings').textContent = meData.earnings || 0;
+                        document.getElementById('earningsStat').classList.remove('hidden');
+                        document.getElementById('balance').textContent = `$${meData.balance || 0}`;
+                        document.getElementById('balanceDisplay').classList.remove('hidden');
+                        document.getElementById('coins').textContent = meData.coins || 0;
+                        document.getElementById('coinsDisplay').classList.remove('hidden');
+                        
+                        // Premium badge
+                        if (meData.isPremium && (!meData.premiumExpiresAt || new Date(meData.premiumExpiresAt) > new Date())) {
+                            document.getElementById('premiumBadge').classList.remove('hidden');
+                        }
+                    }
+                    
+                    isOwnProfile = userId === sessionUserId;
+                    
+                    const actionButtons = document.getElementById('actionButtons');
+                    actionButtons.innerHTML = '';
+                    
+                    if (isOwnProfile) {
+                        const editBtn = document.createElement('button');
+                        editBtn.id = 'editProfileBtn';
+                        editBtn.className = 'twitter-blue text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors font-medium';
+                        editBtn.textContent = 'Profilni tahrirlash';
+                        actionButtons.appendChild(editBtn);
+                        
+                        const premiumBtn = document.createElement('button');
+                        premiumBtn.className = 'bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors font-medium ml-2';
+                        premiumBtn.textContent = currentUser.isPremium ? 'Premium boshqarish' : 'Premium obuna';
+                        premiumBtn.addEventListener('click', () => document.getElementById('premiumModal').classList.remove('hidden'));
+                        actionButtons.appendChild(premiumBtn);
+
+                        const depositBtn = document.createElement('button');
+                        depositBtn.className = 'balance-display text-white px-4 py-2 rounded-xl hover:opacity-90 transition-colors font-medium ml-2';
+                        depositBtn.textContent = 'Balans to\'ldirish';
+                        depositBtn.addEventListener('click', () => document.getElementById('depositModal').classList.remove('hidden'));
+                        actionButtons.appendChild(depositBtn);
+
+                        const coinsBtn = document.createElement('button');
+                        coinsBtn.className = 'coins-display text-white px-4 py-2 rounded-xl hover:opacity-90 transition-colors font-medium ml-2';
+                        coinsBtn.textContent = 'Coin sotib olish';
+                        coinsBtn.addEventListener('click', () => document.getElementById('coinsModal').classList.remove('hidden'));
+                        actionButtons.appendChild(coinsBtn);
+
+                        const gamesBtn = document.createElement('button');
+                        gamesBtn.className = 'bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition-colors font-medium ml-2';
+                        gamesBtn.textContent = 'O\'yinlar';
+                        gamesBtn.addEventListener('click', () => document.getElementById('gamesModal').classList.remove('hidden'));
+                        actionButtons.appendChild(gamesBtn);
+
+                        const withdrawBtn = document.createElement('button');
+                        withdrawBtn.className = 'bg-orange-600 text-white px-4 py-2 rounded-xl hover:bg-orange-700 transition-colors font-medium ml-2';
+                        withdrawBtn.textContent = 'Balans yechish';
+                        withdrawBtn.addEventListener('click', () => document.getElementById('withdrawalModal').classList.remove('hidden'));
+                        actionButtons.appendChild(withdrawBtn);
+                        
+                        editBtn.addEventListener('click', function() {
+                            document.getElementById('editModal').classList.remove('hidden');
+                        });
+
+                        // Suhbatlarni yuklash
+                        await loadConversations();
+                    } else {
+                        const isFollowing = user.followers.some(follower => follower._id === sessionUserId);
+                        const followBtn = document.createElement('button');
+                        followBtn.id = 'followBtn';
+                        followBtn.className = `mr-2 ${isFollowing ? 'glass-button text-gray-300' : 'twitter-blue text-white'} px-4 py-2 rounded-xl hover:opacity-90 transition-colors font-medium`;
+                        followBtn.textContent = isFollowing ? 'Obuna bo\'lingan' : 'Obuna bo\'lish';
+                        actionButtons.appendChild(followBtn);
+                        
+                        const messageBtn = setupMessageButton(user);
+                        actionButtons.appendChild(messageBtn);
+                        
+                        followBtn.addEventListener('click', async function() {
+                            try {
+                                const response = await fetch(`/user/${userId}/follow`, {
+                                    method: 'POST'
+                                });
+                                
+                                const data = await response.json();
+                                
+                                if (data.success) {
+                                    const isNowFollowing = data.isFollowing;
+                                    this.textContent = isNowFollowing ? 'Obuna bo\'lingan' : 'Obuna bo\'lish';
+                                    this.className = `mr-2 ${isNowFollowing ? 'glass-button text-gray-300' : 'twitter-blue text-white'} px-4 py-2 rounded-xl hover:opacity-90 transition-colors font-medium`;
+                                    
+                                    document.getElementById('followerCount').textContent = data.followers;
+                                }
+                            } catch (error) {
+                                console.error('Obuna bo\'lishda xatolik:', error);
+                            }
+                        });
+                    }
+                } else {
+                    showError('Profil ma\'lumotlarini yuklashda xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Profil ma\'lumotlarini yuklashda xatolik:', error);
+                showError('Profil ma\'lumotlarini yuklashda xatolik');
+            }
+        }
+
+        async function loadConversations() {
+            try {
+                const response = await fetch('/messages/conversations');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const list = document.getElementById('conversationsList');
+                    list.innerHTML = '';
+                    
+                    if (data.conversations.length === 0) {
+                        list.innerHTML = '<p class="text-gray-400 text-center py-4">Hali suhbatlar mavjud emas. Boshqa foydalanuvchilarga xabar yuborib, suhbat boshlang.</p>';
+                    } else {
+                        data.conversations.forEach(conv => {
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center p-3 border-b border-gray-700 cursor-pointer hover:bg-gray-800 rounded-lg';
+                            div.addEventListener('click', () => openMessageModal(conv.sender));
+                            
+                            const unreadBadge = conv.unreadCount > 0 ? `<span class="unread-badge ml-2">${conv.unreadCount}</span>` : '';
+                            
+                            div.innerHTML = `
+                                <img src="${conv.sender.profilePic || 'https://via.placeholder.com/40'}" alt="Profile" class="w-10 h-10 rounded-full mr-3 object-cover">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-semibold truncate">${conv.sender.fullName}</p>
+                                        ${unreadBadge}
+                                    </div>
+                                    <p class="text-sm text-gray-400 truncate">${conv.lastMessage}</p>
+                                </div>
+                                <p class="text-sm text-gray-400 ml-2">${new Date(conv.lastTime).toLocaleDateString('uz-UZ')}</p>
+                            `;
+                            
+                            list.appendChild(div);
+                        });
+                    }
+                    
+                    document.getElementById('conversationsSection').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Suhbatlarni yuklashda xatolik:', error);
+            }
+        }
+
+        function setupMessageButton(user) {
+            const messageBtn = document.createElement('button');
+            messageBtn.className = 'bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600 transition-colors font-medium';
+            messageBtn.textContent = 'Xabar yuborish';
+            
+            messageBtn.addEventListener('click', () => {
+                openMessageModal(user);
+            });
+            
+            return messageBtn;
+        }
+
+        function openMessageModal(user) {
+            currentChatUser = user;
+            const modal = document.getElementById('messageModal');
+            const title = document.getElementById('messageModalTitle');
+            const userPic = document.getElementById('messageUserPic');
+            const userName = document.getElementById('messageUserName');
+            const userUsername = document.getElementById('messageUserUsername');
+            
+            title.textContent = `${user.fullName} bilan suhbat`;
+            userPic.src = user.profilePic || 'https://via.placeholder.com/40';
+            userName.textContent = user.fullName;
+            userUsername.textContent = `@${user.username}`;
+            
+            loadMessages(user._id);
+            
+            modal.classList.remove('hidden');
+            
+            clearInterval(messageInterval);
+            messageInterval = setInterval(() => {
+                loadMessages(user._id);
+            }, 10000);
+            
+            document.getElementById('messageInput').focus();
+        }
+
+        async function loadMessages(userId) {
+            try {
+                const response = await fetch(`/messages/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const messageHistory = document.getElementById('messageHistory');
+                    messageHistory.innerHTML = '';
+                    
+                    if (data.messages.length === 0) {
+                        messageHistory.innerHTML = '<div class="text-center text-gray-400 py-8">Hali xabarlar mavjud emas</div>';
+                        return;
+                    }
+                    
+                    data.messages.forEach(message => {
+                        const messageElement = createMessageElement(message);
+                        messageHistory.appendChild(messageElement);
+                    });
+                    
+                    messageHistory.scrollTop = messageHistory.scrollHeight;
+                    
+                    await fetch(`/messages/${userId}/read`, {
+                        method: 'POST'
+                    });
+                }
+            } catch (error) {
+                console.error('Xabarlarni yuklashda xatolik:', error);
+            }
+        }
+
+        function createMessageElement(message) {
+            const isSender = message.senderId._id === sessionUserId;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mb-3 ${isSender ? 'text-right' : 'text-left'}`;
+            
+            let tipHTML = '';
+            if (message.isTip && message.tipAmount > 0) {
+                tipHTML = `<div class="text-yellow-400 font-bold text-xs mb-1">Tip: $${message.tipAmount}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="inline-block max-w-xs lg:max-w-md rounded-lg px-4 py-2 ${isSender 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-700 text-gray-200'}">
+                    ${tipHTML}
+                    <div class="text-sm">${message.content}</div>
+                    <div class="text-xs mt-1 ${isSender ? 'text-blue-100' : 'text-gray-400'}">
+                        ${new Date(message.createdAt).toLocaleTimeString('uz-UZ', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        })}
+                    </div>
+                </div>
+            `;
+            
+            return messageDiv;
+        }
+
+        function openEditModal(postId, currentContent) {
+            const modal = document.getElementById('edit-modal');
+            const editContent = document.getElementById('edit-content');
+            
+            editContent.value = currentContent;
+            modal.setAttribute('data-post-id', postId);
+            modal.classList.remove('hidden');
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const tipInput = document.getElementById('tipAmount');
+            const content = messageInput.value.trim();
+            const tipAmount = parseFloat(tipInput.value) || 0;
+            
+            if (!content) return;
+            
+            try {
+                const response = await fetch('/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        receiverId: currentChatUser._id,
+                        content,
+                        tipAmount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageInput.value = '';
+                    tipInput.value = '';
+                    await loadMessages(currentChatUser._id);
+                } else {
+                    alert('Xabar yuborishda xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Xabar yuborishda xatolik:', error);
+                alert('Xabar yuborishda xatolik');
+            }
+        }
+
+        async function loadUserPosts(userId) {
+            try {
+                const response = await fetch(`/posts/user/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const postsContainer = document.getElementById('userPosts');
+                    postsContainer.innerHTML = '';
+                    
+                    if (data.posts.length === 0) {
+                        document.getElementById('noPosts').classList.remove('hidden');
+                        return;
+                    }
+                    
+                    document.getElementById('noPosts').classList.add('hidden');
+                    
+                    data.posts.forEach(post => {
+                        const postElement = createPostElement(post);
+                        postsContainer.appendChild(postElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Postlarni yuklashda xatolik:', error);
+            }
+        }
+
+        function createPostElement(post) {
+            const postElement = document.createElement('div');
+            postElement.className = 'glass-card rounded-2xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105';
+            postElement.addEventListener('click', () => {
+                window.location.href = `/?highlight=${post._id}`;
+            });
+            
+            let mediaHTML = '';
+            if (post.media) {
+                if (post.media.includes('.mp4') || post.media.includes('.webm') || post.media.includes('.ogg')) {
+                    mediaHTML = `<video src="${post.media}" controls class="w-full h-48 object-cover"></video>`;
+                } else {
+                    mediaHTML = `<img src="${post.media}" alt="Post media" class="w-full h-48 object-cover">`;
+                }
+            }
+            
+            let sponsorHTML = '';
+            if (post.isSponsored) {
+                sponsorHTML = '<span class="bg-yellow-500 text-black text-xs px-2 py-1 rounded ml-2">Sponsor</span>';
+            }
+            
+            let boostHTML = '';
+            if (post.boostLevel > 0) {
+                boostHTML = `<span class="bg-blue-500 text-white text-xs px-2 py-1 rounded ml-2">Boost x${post.boostLevel}</span>`;
+            }
+            
+            let actionButtonsHTML = '';
+            if (isOwnProfile) {
+                actionButtonsHTML = `
+                    <div class="mt-2 flex justify-end space-x-2">
+                        <button class="text-blue-400 text-sm edit-post-btn hover:text-blue-300 transition-colors" data-post-id="${post._id}">Tahrirlash</button>
+                        <button class="text-red-400 text-sm delete-post-btn hover:text-red-300 transition-colors" data-post-id="${post._id}">O'chirish</button>
+                    </div>
+                `;
+            }
+            
+            postElement.innerHTML = `
+                ${mediaHTML}
+                <div class="p-3">
+                    <div class="flex items-center mb-2">
+                        <p class="text-sm line-clamp-2 flex-1">${post.content}</p>
+                        ${sponsorHTML}${boostHTML}
+                    </div>
+                    <div class="flex justify-between items-center mt-2 text-gray-400 text-sm">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>${post.likes.length}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>${post.comments.length}</span>
+                        </div>
+                    </div>
+                    ${actionButtonsHTML}
+                </div>
+            `;
+
+            // O'chirish tugmasi uchun event listener
+            const deleteBtn = postElement.querySelector('.delete-post-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    const postId = this.getAttribute('data-post-id');
+                    const confirmDelete = confirm('Postni o\'chirishni istaysizmi?');
+                    
+                    if (confirmDelete) {
+                        try {
+                            const response = await fetch(`/posts/${postId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                postElement.remove();
+                                showMessage('Post muvaffaqiyatli o\'chirildi', 'success');
+                                
+                                // Agar barcha postlar o'chirilgan bo'lsa
+                                const remainingPosts = document.querySelectorAll('#userPosts > div').length;
+                                if (remainingPosts === 0) {
+                                    document.getElementById('noPosts').classList.remove('hidden');
+                                }
+                            } else {
+                                showMessage('Postni o\'chirishda xatolik: ' + data.message, 'error');
+                            }
+                        } catch (error) {
+                            console.error('Xatolik:', error);
+                            showMessage('Postni o\'chirishda xatolik', 'error');
+                        }
+                    }
+                });
+            }
+
+            // Tahrirlash tugmasi uchun event listener
+            const editBtn = postElement.querySelector('.edit-post-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const postId = this.getAttribute('data-post-id');
+                    openEditModal(postId, post.content);
+                });
+            }
+            
+            return postElement;
+        }
+
+        function setupModal() {
+            document.getElementById('cancelEditBtn').addEventListener('click', function() {
+                document.getElementById('editModal').classList.add('hidden');
+            });
+            
+            document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const fullName = document.getElementById('editFullName').value;
+                const bio = document.getElementById('editBio').value;
+                const profilePicFile = document.getElementById('editProfilePic').files[0];
+                
+                try {
+                    const response = await fetch('/user', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fullName, bio })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (profilePicFile) {
+                            const formData = new FormData();
+                            formData.append('profilePic', profilePicFile);
+                            
+                            const uploadResponse = await fetch('/upload', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const uploadData = await uploadResponse.json();
+                            
+                            if (!uploadData.success) {
+                                alert('Rasm yuklashda xatolik: ' + uploadData.message);
+                            }
+                        }
+                        
+                        document.getElementById('editModal').classList.add('hidden');
+                        await loadProfile(currentUserId);
+                    } else {
+                        alert('Profilni yangilashda xatolik: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    alert('Profilni yangilashda xatolik');
+                }
+            });
+        }
+
+        function setupPremiumModal() {
+            const modal = document.getElementById('premiumModal');
+            document.getElementById('closePremiumModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('subscribeMonthly').addEventListener('click', () => openPaymentRequest('premium', 9.99));
+            document.getElementById('subscribeYearly').addEventListener('click', () => openPaymentRequest('premium', 99.99));
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function setupCoinsModal() {
+            const modal = document.getElementById('coinsModal');
+            document.getElementById('closeCoinsModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('buy100Coins').addEventListener('click', () => openPaymentRequest('coins', 100));
+            document.getElementById('buy500Coins').addEventListener('click', () => openPaymentRequest('coins', 500));
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function setupDepositModal() {
+            const modal = document.getElementById('depositModal');
+            document.getElementById('closeDepositModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('depositBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('depositAmount').value);
+                if (!amount || amount <= 0) return showMessage('To\'g\'ri miqdor kiriting', 'error');
+                openPaymentRequest('balance', amount);
+            });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function setupPaymentRequestModal() {
+            const modal = document.getElementById('paymentRequestModal');
+            document.getElementById('closeRequestModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('paymentRequestForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                try {
+                    const response = await fetch('/payment/request', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        modal.classList.add('hidden');
+                        // Formni tozalash
+                        document.getElementById('screenshot').value = '';
+                        document.getElementById('requestNotes').value = '';
+                    } else {
+                        showMessage('So\'rov yuborishda xatolik: ' + data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    showMessage('So\'rov yuborishda xatolik', 'error');
+                }
+            });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function setupGamesModal() {
+            const modal = document.getElementById('gamesModal');
+            document.getElementById('closeGamesModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('dailyRewardBtn').addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/game/daily-reward', { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        await loadProfile(currentUserId);
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    showMessage('Mukofot olishda xatolik', 'error');
+                }
+            });
+            document.getElementById('coinFlipBtn').addEventListener('click', async () => {
+                const bet = parseInt(document.getElementById('betAmount').value);
+                if (!bet || bet <= 0) return showMessage('To\'g\'ri miqdor kiriting', 'error');
+                try {
+                    const response = await fetch('/game/coin-flip', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ bet })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage(data.message, data.win ? 'success' : 'error');
+                        document.getElementById('betAmount').value = '';
+                        await loadProfile(currentUserId);
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    showMessage('O\'yin o\'ynashda xatolik', 'error');
+                }
+            });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function setupWithdrawalModal() {
+            const modal = document.getElementById('withdrawalModal');
+            document.getElementById('closeWithdrawalModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('withdrawBtn').addEventListener('click', async () => {
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const cardNumber = document.getElementById('cardNumber').value.trim();
+                if (!amount || amount <= 0) return showMessage('To\'g\'ri miqdor kiriting', 'error');
+                if (!cardNumber || cardNumber.length < 13) return showMessage('To\'g\'ri karta raqamini kiriting', 'error');
+                try {
+                    const response = await fetch('/withdraw', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount, cardNumber })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        document.getElementById('withdrawAmount').value = '';
+                        document.getElementById('cardNumber').value = '';
+                        modal.classList.add('hidden');
+                        await loadProfile(currentUserId);
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    showMessage('Yechishda xatolik', 'error');
+                }
+            });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        }
+
+        function openPaymentRequest(type, amount) {
+            document.getElementById('requestType').value = type;
+            document.getElementById('requestAmount').value = amount;
+            document.getElementById('requestTypeDisplay').value = type === 'balance' ? 'Balans to\'ldirish' : type === 'coins' ? 'Coin sotib olish' : 'Premium obuna';
+            const amountDisplay = type === 'coins' ? `${amount} coins` : `$${amount}`;
+            document.getElementById('requestAmountDisplay').value = amountDisplay;
+            document.getElementById('paymentRequestModal').classList.remove('hidden');
+        }
+
+        function setupMessageModal() {
+            const messageModal = document.getElementById('messageModal');
+            const closeMessageModal = document.getElementById('closeMessageModal');
+            
+            closeMessageModal.addEventListener('click', () => {
+                messageModal.classList.add('hidden');
+                clearInterval(messageInterval);
+            });
+            
+            document.getElementById('sendMessageForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await sendMessage();
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !messageModal.classList.contains('hidden')) {
+                    messageModal.classList.add('hidden');
+                    clearInterval(messageInterval);
+                }
+            });
+            
+            // Modal tashqarisiga bosilganda yopish
+            messageModal.addEventListener('click', (e) => {
+                if (e.target === messageModal) {
+                    messageModal.classList.add('hidden');
+                    clearInterval(messageInterval);
+                }
+            });
+        }
+
+        function setupEditModal() {
+            const editModal = document.getElementById('edit-modal');
+            const cancelEdit = document.getElementById('cancel-edit');
+            const saveEdit = document.getElementById('save-edit');
+            
+            cancelEdit.addEventListener('click', () => {
+                editModal.classList.add('hidden');
+            });
+            
+            saveEdit.addEventListener('click', async () => {
+                const postId = editModal.getAttribute('data-post-id');
+                const newContent = document.getElementById('edit-content').value.trim();
+                
+                if (!newContent) {
+                    showMessage('Post matni bo\'sh bo\'lmasligi kerak', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/posts/${postId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: newContent })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        editModal.classList.add('hidden');
+                        showMessage('Post muvaffaqiyatli yangilandi', 'success');
+                        await loadUserPosts(currentUserId);
+                    } else {
+                        showMessage('Postni yangilashda xatolik: ' + data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Xatolik:', error);
+                    showMessage('Postni yangilashda xatolik', 'error');
+                }
+            });
+            
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) {
+                    editModal.classList.add('hidden');
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !editModal.classList.contains('hidden')) {
+                    editModal.classList.add('hidden');
+                }
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+        }
+        
+        function showMessage(message, type) {
+            // Siz buni o'zingizning chiroyli xabar ko'rsatish tizimingiz bilan almashtirishingiz mumkin
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } z-50`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
