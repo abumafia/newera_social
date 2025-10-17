@@ -235,6 +235,89 @@
             overflow-y: auto;
         }
 
+        /* Post creation modal */
+        .create-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .create-modal-content {
+            background: rgba(15, 15, 15, 0.95);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .preview-post {
+            background: rgba(15, 15, 15, 0.7);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            min-height: 100px;
+        }
+
+        .sticker-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .sticker-modal-content {
+            background: rgba(20, 20, 20, 0.95);
+            margin: 20% auto;
+            padding: 1rem;
+            border-radius: 1rem;
+            width: 80%;
+            max-width: 300px;
+            max-height: 50vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Poll styles */
+        .poll-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .poll-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(30, 30, 30, 0.6);
+            border-radius: 0.5rem;
+        }
+
+        /* Schedule styles */
+        .schedule-section {
+            margin-top: 1rem;
+        }
+
+        .schedule-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
         /* Mobile optimizations */
         @media (max-width: 640px) {
             .navbar-space {
@@ -289,6 +372,12 @@
             .bottom-nav-item:hover {
                 color: #1DA1F2;
             }
+
+            .create-modal-content {
+                margin: 10% auto;
+                width: 95%;
+                padding: 1rem;
+            }
         }
     </style>
 </head>
@@ -321,10 +410,10 @@
     <!-- Asosiy kontent -->
     <div class="max-w-2xl mx-auto px-4 pt-24 pb-24 md:pb-16">
         <!-- Post yaratish tugmasi (faqat desktop) -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 hidden md:flex">
-            <a href="/create.html" class="twitter-blue text-white px-4 py-3 rounded-full hover:bg-blue-600 transition-colors font-medium flex items-center w-full sm:w-auto justify-center">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <button id="createPostBtn" class="twitter-blue text-white px-4 py-3 rounded-full hover:bg-blue-600 transition-colors font-medium flex items-center w-full sm:w-auto justify-center">
                 <span class="text-lg mr-2">+</span> Yangi post yaratish
-            </a>
+            </button>
             
             <!-- Qidiruv filtrlari -->
             <div id="searchFilters" class="hidden flex items-center space-x-2 w-full justify-center sm:justify-end">
@@ -346,12 +435,97 @@
         </div>
     </div>
 
+    <!-- Post yaratish modali -->
+    <div id="createModal" class="create-modal">
+        <div class="create-modal-content">
+            <h2 class="text-xl font-bold mb-4">Yangi post yaratish</h2>
+            <form id="postForm" enctype="multipart/form-data">
+                <textarea id="postContent" placeholder="Nima haqida yozmoqchisiz?" class="glass-input w-full p-3 rounded-xl h-32 resize-none mb-4" required maxlength="10000"></textarea>
+                
+                <div id="mediaUpload" class="mb-4">
+                    <input type="file" id="mediaFile" accept="image/*,video/*" class="glass-input w-full p-3 rounded-xl hidden">
+                    <label for="mediaFile" class="glass-button w-full text-center py-3 rounded-xl cursor-pointer block">📎 Media qo'shish (rasm yoki video)</label>
+                    <div id="mediaPreview" class="mt-2"></div>
+                </div>
+
+                <div id="premiumFeatures" class="hidden mb-4 space-y-4">
+                    <!-- Animatsion stikerlar -->
+                    <div>
+                        <button type="button" id="addStickerBtn" class="glass-button px-3 py-2 rounded-full mr-2">🎭 Stiker qo'shish</button>
+                        <small class="text-gray-400">Animatsion stikerlar faqat premium uchun</small>
+                    </div>
+
+                    <!-- Orqa fon rangi -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Post orqa fon rangi</label>
+                        <input type="color" id="bgColor" value="#1DA1F2" class="w-full h-10 rounded cursor-pointer">
+                        <small class="text-gray-400">Post joylangandan keyin rang o'zgaradi</small>
+                    </div>
+
+                    <!-- Poll yaratish -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Savol (Poll)</label>
+                        <input type="text" id="pollQuestion" placeholder="Savol kiriting..." class="glass-input w-full p-3 rounded-xl mb-2">
+                        <div id="pollOptions" class="space-y-2 mb-2">
+                            <div class="poll-option">
+                                <input type="text" placeholder="Variant 1" class="glass-input flex-1 p-2 rounded" required>
+                                <button type="button" class="text-red-400 hover:text-red-300">−</button>
+                            </div>
+                            <div class="poll-option">
+                                <input type="text" placeholder="Variant 2" class="glass-input flex-1 p-2 rounded" required>
+                                <button type="button" class="text-red-400 hover:text-red-300">−</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addPollOption" class="glass-button px-3 py-1 rounded text-sm">+ Variant qo'shish</button>
+                        <small class="text-gray-400">Poll faqat premium uchun</small>
+                    </div>
+
+                    <!-- Postni rejalashtirish -->
+                    <div class="schedule-section">
+                        <label class="block text-sm font-medium mb-2">Postni rejalashtirish (sana va vaqt)</label>
+                        <div class="schedule-input">
+                            <input type="date" id="scheduleDate" class="glass-input p-2 rounded flex-1">
+                            <input type="time" id="scheduleTime" class="glass-input p-2 rounded flex-1">
+                        </div>
+                        <small class="text-gray-400">Bo'sh qoldirsangiz, darhol joylanadi</small>
+                    </div>
+
+                    <!-- Matn rangi -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Matn rangi</label>
+                        <input type="color" id="textColor" value="#ffffff" class="w-full h-10 rounded cursor-pointer">
+                        <small class="text-gray-400">Post matni rangini o'zgartirish</small>
+                    </div>
+                </div>
+
+                <div id="postPreview" class="preview-post hidden">
+                    <p id="previewContent"></p>
+                    <div id="previewMedia"></div>
+                    <div id="previewPoll" class="poll-preview hidden"></div>
+                </div>
+
+                <button type="submit" class="twitter-blue text-white w-full py-3 rounded-xl mt-4 hover:bg-blue-600 transition-colors font-medium">Post joylash</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stiker modali -->
+    <div id="stickerModal" class="sticker-modal">
+        <div class="sticker-modal-content">
+            <h3 class="text-lg font-bold mb-3">Stiker tanlang</h3>
+            <div id="stickerGrid" class="sticker-grid">
+                <!-- Stikerlar JS orqali yuklanadi -->
+            </div>
+            <button id="closeStickerBtn" class="glass-button w-full mt-3 py-2 rounded">Yopish</button>
+        </div>
+    </div>
+
     <!-- 📱 Mobil Pastki Navbar -->
-    <nav class="fixed bottom-0 left-0 w-full bg-gray-900/80 backdrop-blur-md border-t border-gray-700 sm:hidden z-50">
+    <nav class="fixed bottom-0 left-0 w-full bg-gray-900/80 backdrop-blur-md border-t border-gray-700 sm:hidden z-50 bottom-nav">
         <div class="flex justify-around items-center py-2 text-gray-400">
             
             <!-- Asosiy -->
-            <a href="/" class="flex flex-col items-center hover:text-blue-500 transition">
+            <a href="/" class="flex flex-col items-center hover:text-blue-500 transition bottom-nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -360,17 +534,17 @@
             </a>
 
             <!-- Create -->
-            <a href="/create.html" class="flex flex-col items-center text-white">
+            <button id="mobileCreateBtn" class="flex flex-col items-center text-white">
                 <div class="bg-blue-600 p-3 rounded-full shadow-lg -mt-6 border-4 border-gray-900">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                 </div>
                 <span class="text-xs mt-1 text-blue-400">Yaratish</span>
-            </a>
+            </button>
 
             <!-- Profil -->
-            <a href="/profile" class="flex flex-col items-center hover:text-purple-500 transition">
+            <a href="/profile" class="flex flex-col items-center hover:text-purple-500 transition bottom-nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -389,14 +563,16 @@
         let searchQuery = '';
         let searchTimeout = null;
         let adInterval = null;
+        let isPremiumUser = false;
 
         function escapeRegExp(string) {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeSession();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeSession();
             loadPosts();
+            setupCreateModal();
             
             async function checkSession() {
                 try {
@@ -416,7 +592,7 @@
                 }
             }
 
-            checkSession();
+            await checkSession();
             
             document.getElementById('loadMoreBtn').addEventListener('click', () => {
                 if (isSearching) {
@@ -497,6 +673,7 @@
                 if (data.success) {
                     currentUser = data.user;
                     sessionUserId = data.user._id;
+                    isPremiumUser = data.user.isPremium && (!data.user.premiumExpiresAt || new Date(data.user.premiumExpiresAt) > new Date());
                     
                     document.getElementById('logoutBtn').addEventListener('click', async () => {
                         try {
@@ -508,7 +685,7 @@
                     });
 
                     // Ads interval (har 5 postdan keyin reklama)
-                    if (!currentUser.isPremium) {
+                    if (!isPremiumUser) {
                         adInterval = setInterval(() => {
                             insertAd();
                         }, 5000); // Har 5 soniyada tekshirish
@@ -517,6 +694,217 @@
             } catch (error) {
                 console.error('Session ma\'lumotlarini olishda xatolik:', error);
             }
+        }
+
+        function setupCreateModal() {
+            const createBtn = document.getElementById('createPostBtn');
+            const mobileCreateBtn = document.getElementById('mobileCreateBtn');
+            const modal = document.getElementById('createModal');
+            const form = document.getElementById('postForm');
+            const content = document.getElementById('postContent');
+            const mediaFile = document.getElementById('mediaFile');
+            const mediaPreview = document.getElementById('mediaPreview');
+            const premiumFeatures = document.getElementById('premiumFeatures');
+            const bgColor = document.getElementById('bgColor');
+            const postPreview = document.getElementById('postPreview');
+            const previewContent = document.getElementById('previewContent');
+            const previewMedia = document.getElementById('previewMedia');
+            const addStickerBtn = document.getElementById('addStickerBtn');
+            const stickerModal = document.getElementById('stickerModal');
+            const closeStickerBtn = document.getElementById('closeStickerBtn');
+            const pollQuestion = document.getElementById('pollQuestion');
+            const pollOptions = document.getElementById('pollOptions');
+            const addPollOption = document.getElementById('addPollOption');
+            const scheduleDate = document.getElementById('scheduleDate');
+            const scheduleTime = document.getElementById('scheduleTime');
+            const textColor = document.getElementById('textColor');
+            const previewPoll = document.getElementById('previewPoll');
+
+            // Modal ochish
+            createBtn.addEventListener('click', () => modal.style.display = 'block');
+            mobileCreateBtn.addEventListener('click', () => modal.style.display = 'block');
+
+            // Modal yopish (backdrop click)
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+
+            // Media preview
+            mediaFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    if (file.type.startsWith('image/')) {
+                        mediaPreview.innerHTML = `<div class="media-preview"><img src="${url}" class="w-full h-auto"><button type="button" class="remove-media" onclick="removeMedia()">×</button></div>`;
+                    } else if (file.type.startsWith('video/')) {
+                        mediaPreview.innerHTML = `<div class="media-preview"><video src="${url}" controls class="w-full h-auto"></video><button type="button" class="remove-media" onclick="removeMedia()">×</button></div>`;
+                    }
+                    updatePreview();
+                }
+            });
+
+            window.removeMedia = () => {
+                mediaPreview.innerHTML = '';
+                mediaFile.value = '';
+                updatePreview();
+            };
+
+            // Premium features ko'rsatish
+            if (isPremiumUser) {
+                premiumFeatures.classList.remove('hidden');
+            } else {
+                // Oddiy foydalanuvchilar uchun limit
+                content.setAttribute('maxlength', '280');
+            }
+
+            // Content o'zgarishi bo'yicha preview
+            content.addEventListener('input', updatePreview);
+            bgColor.addEventListener('input', updatePreview);
+            textColor.addEventListener('input', updatePreview);
+            pollQuestion.addEventListener('input', updatePreview);
+            pollOptions.addEventListener('input', updatePreview);
+
+            function updatePreview() {
+                previewContent.innerHTML = content.value || '<p class="text-gray-500">Oldindan ko\'rish...</p>';
+                previewContent.style.color = textColor.value;
+                if (mediaPreview.innerHTML) {
+                    previewMedia.innerHTML = mediaPreview.innerHTML;
+                } else {
+                    previewMedia.innerHTML = '';
+                }
+                postPreview.classList.remove('hidden');
+                if (isPremiumUser && bgColor.value) {
+                    postPreview.style.backgroundImage = `linear-gradient(135deg, ${bgColor.value}20 0%, transparent 100%)`;
+                }
+                updatePollPreview();
+            }
+
+            function updatePollPreview() {
+                if (pollQuestion.value) {
+                    const options = Array.from(pollOptions.querySelectorAll('input[type="text"]')).map(input => input.value).filter(v => v);
+                    if (options.length >= 2) {
+                        previewPoll.innerHTML = `
+                            <h4 class="font-semibold mb-2">${pollQuestion.value}</h4>
+                            ${options.map(opt => `<div class="text-sm">${opt}</div>`).join('')}
+                        `;
+                        previewPoll.classList.remove('hidden');
+                    } else {
+                        previewPoll.classList.add('hidden');
+                    }
+                } else {
+                    previewPoll.classList.add('hidden');
+                }
+            }
+
+            // Poll variantlarini boshqarish
+            addPollOption.addEventListener('click', () => {
+                const newOption = document.createElement('div');
+                newOption.className = 'poll-option';
+                newOption.innerHTML = `
+                    <input type="text" placeholder="Yangi variant" class="glass-input flex-1 p-2 rounded" required>
+                    <button type="button" class="text-red-400 hover:text-red-300">−</button>
+                `;
+                newOption.querySelector('button').addEventListener('click', () => newOption.remove());
+                pollOptions.appendChild(newOption);
+                updatePreview();
+            });
+
+            // Poll variantlarini o'chirish
+            pollOptions.addEventListener('click', (e) => {
+                if (e.target.classList.contains('text-red-400')) {
+                    e.target.closest('.poll-option').remove();
+                    updatePreview();
+                }
+            });
+
+            // Stiker modali
+            addStickerBtn.addEventListener('click', () => {
+                loadStickers();
+                stickerModal.style.display = 'block';
+            });
+
+            closeStickerBtn.addEventListener('click', () => stickerModal.style.display = 'none');
+
+            stickerModal.addEventListener('click', (e) => {
+                if (e.target === stickerModal) stickerModal.style.display = 'none';
+            });
+
+            function loadStickers() {
+                const grid = document.getElementById('stickerGrid');
+                const stickers = ['😀', '😂', '❤️', '🔥', '💎', '👑', '✨', '🥇', '🎖️', '🔮', '🛡️', '⚡', '🌈', '🦄', '💰', '🏆', '🚀', '🌟', '💫', '🎉']; 
+                const premiumStickers = ['💎', '👑', '✨', '🥇', '🎖️', '🔮', '🛡️', '⚡', '🌈', '🦄', '💰', '🏆', '🚀', '🌟', '💫', '🎉'];
+                grid.innerHTML = stickers.map(sticker => {
+                    const isPremium = premiumStickers.includes(sticker);
+                    return `<div class="sticker-item ${isPremium ? 'premium-sticker' : ''}" data-sticker="${sticker}">${sticker}</div>`;
+                }).join('');
+                
+                // Stiker click
+                grid.querySelectorAll('.sticker-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        content.value += item.dataset.sticker + ' ';
+                        updatePreview();
+                        stickerModal.style.display = 'none';
+                    });
+                });
+            }
+
+            // Form submit
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('content', content.value);
+                if (mediaFile.files[0]) formData.append('media', mediaFile.files[0]);
+                if (isPremiumUser) {
+                    formData.append('backgroundColor', bgColor.value);
+                    formData.append('textColor', textColor.value);
+                    if (pollQuestion.value) {
+                        formData.append('pollQuestion', pollQuestion.value);
+                        const options = Array.from(pollOptions.querySelectorAll('input[type="text"]')).map(input => input.value).filter(v => v);
+                        options.forEach((opt, index) => formData.append(`pollOption${index}`, opt));
+                    }
+                    const scheduleDateVal = scheduleDate.value;
+                    const scheduleTimeVal = scheduleTime.value;
+                    if (scheduleDateVal && scheduleTimeVal) {
+                        const scheduleDateTime = new Date(`${scheduleDateVal}T${scheduleTimeVal}`);
+                        formData.append('scheduledAt', scheduleDateTime.toISOString());
+                    }
+                }
+
+                try {
+                    const response = await fetch('/posts', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        modal.style.display = 'none';
+                        content.value = '';
+                        pollQuestion.value = '';
+                        pollOptions.innerHTML = `
+                            <div class="poll-option">
+                                <input type="text" placeholder="Variant 1" class="glass-input flex-1 p-2 rounded" required>
+                                <button type="button" class="text-red-400 hover:text-red-300">−</button>
+                            </div>
+                            <div class="poll-option">
+                                <input type="text" placeholder="Variant 2" class="glass-input flex-1 p-2 rounded" required>
+                                <button type="button" class="text-red-400 hover:text-red-300">−</button>
+                            </div>
+                        `;
+                        scheduleDate.value = '';
+                        scheduleTime.value = '';
+                        mediaFile.value = '';
+                        mediaPreview.innerHTML = '';
+                        postPreview.classList.add('hidden');
+                        showMessage('Post muvaffaqiyatli joylandi!', 'success');
+                        loadPosts(true); // Reload posts
+                    } else {
+                        showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                    }
+                } catch (error) {
+                    console.error('Post joylashda xatolik:', error);
+                    showMessage('Xatolik yuz berdi', 'error');
+                }
+            });
         }
 
         async function insertAd() {
@@ -816,7 +1204,7 @@
             const postsContainer = document.getElementById('postsContainer');
             
             // Premium stikerlar
-            const premiumStickers = ['💎', '👑', '✨', '🥇', '🎖️', '🔮', '🛡️', '⚡', '🌈', '🦄', '💰', '🏆'];
+            const premiumStickers = ['💎', '👑', '✨', '🥇', '🎖️', '🔮', '🛡️', '⚡', '🌈', '🦄', '💰', '🏆', '🚀', '🌟', '💫', '🎉'];
             
             posts.forEach(post => {
                 const postElement = document.createElement('div');
@@ -828,15 +1216,26 @@
                     content = highlightText(content, searchQuery);
                 }
 
-                // Premium stikerlarni wrap qilish
                 let processedContent = content;
-                premiumStickers.forEach(sticker => {
-                    const regex = new RegExp(escapeRegExp(sticker), 'g');
-                    processedContent = processedContent.replace(regex, `<span class="premium-sticker inline-block">${sticker}</span>`);
-                });
+                const isPostPremium = post.userId.isPremium && (!post.userId.premiumExpiresAt || new Date(post.userId.premiumExpiresAt) > new Date());
+                if (isPostPremium) {
+                    premiumStickers.forEach(sticker => {
+                        const regex = new RegExp(escapeRegExp(sticker), 'g');
+                        processedContent = processedContent.replace(regex, `<span class="premium-sticker inline-block">${sticker}</span>`);
+                    });
+                    if (post.textColor) {
+                        processedContent = `<span style="color: ${post.textColor}">${processedContent}</span>`;
+                    }
+                }
+
+                // Orqa fon rangini qo'llash (premium postlar uchun)
+                if (isPostPremium && post.backgroundColor) {
+                    postElement.style.backgroundImage = `linear-gradient(135deg, ${post.backgroundColor}20 0%, transparent 100%)`;
+                    postElement.style.backgroundColor = 'rgba(15, 15, 15, 0.5)';
+                }
 
                 let userBadges = '';
-                if (post.userId.isPremium && (!post.userId.premiumExpiresAt || new Date(post.userId.premiumExpiresAt) > new Date())) {
+                if (isPostPremium) {
                     userBadges = '<span class="premium-badge ml-2">Premium</span>';
                 }
 
@@ -848,9 +1247,25 @@
                     postBadges += `<span class="boost-badge text-xs px-2 py-1 rounded ml-2">Boost x${post.boostLevel}</span>`;
                 }
 
+                // Poll ko'rsatish
+                let pollHtml = '';
+                if (post.poll && post.poll.question) {
+                    pollHtml = `
+                        <div class="mt-4 p-3 bg-gray-800 rounded-lg">
+                            <h4 class="font-semibold mb-2">${post.poll.question}</h4>
+                            ${post.poll.options.map((opt, index) => `
+                                <div class="text-sm mb-1 flex justify-between">
+                                    <span>${opt}</span>
+                                    <span>${post.poll.votes.filter(v => v.optionIndex === index).length} ovoz</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
                 const shortContent = post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content;
                 const escapedText = post.content.replace(/"/g, '&quot;');
-                const isPremiumUser = post.userId.isPremium && (!post.userId.premiumExpiresAt || new Date(post.userId.premiumExpiresAt) > new Date()) ? 'Premium' : '';
+                const isPremiumUserPost = isPostPremium ? 'Premium' : '';
                 
                 postElement.innerHTML = `
                     <div class="flex items-center mb-4">
@@ -872,6 +1287,8 @@
                         </div>
                     ` : ''}
                     
+                    ${pollHtml}
+                    
                     <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-6 text-gray-500 pt-3 post-actions">
                         <button class="flex items-center space-x-1 like-btn ${post.likes.includes(sessionUserId) ? 'text-red-500' : 'hover:text-red-400'}" data-post-id="${post._id}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="${post.likes.includes(sessionUserId) ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
@@ -892,7 +1309,7 @@
                                 data-title="${post.userId.fullName} post qildi: ${shortContent}" 
                                 data-text="${escapedText}" 
                                 data-image="${post.media || ''}" 
-                                data-monetization="${isPremiumUser}">
+                                data-monetization="${isPremiumUserPost}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                             </svg>
@@ -1056,7 +1473,7 @@
             return html;
         }
 
-        // Comment va reply event listeners (renderPosts ichida qo'shilgan, lekin qo'shimcha uchun)
+        // Comment va reply event listeners
         document.addEventListener('click', function(e) {
             if (e.target.closest('.comment-like-btn')) {
                 const btn = e.target.closest('.comment-like-btn');
@@ -1144,7 +1561,6 @@
         });
 
         function createCommentElement(comment, postId) {
-            // Similar to renderComments, but dynamic
             const div = document.createElement('div');
             div.className = 'border-l-2 border-gray-600 pl-3';
             div.innerHTML = `

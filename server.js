@@ -40,6 +40,17 @@ const PostSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   content: { type: String, required: true },
   media: { type: String, default: '' },
+  backgroundColor: { type: String, default: '' }, // Premium uchun orqa fon rangi
+  textColor: { type: String, default: '' }, // Premium uchun matn rangi
+  poll: {
+    question: { type: String, default: '' },
+    options: [{ type: String }],
+    votes: [{
+      optionIndex: { type: Number, required: true },
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+    }]
+  },
+  scheduledAt: { type: Date, default: null }, // Rejalashtirilgan vaqt
   isSponsored: { type: Boolean, default: false }, // Sponsor post (monetizatsiya)
   sponsorPrice: { type: Number, default: 0 }, // Sponsor narxi
   boostLevel: { type: Number, default: 0 }, // Postni ko'tarish darajasi (pullik)
@@ -133,7 +144,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer sozlamalari (rasm uchun)
+// Multer sozlamalari (umumiy media uchun: rasm va video)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadsDir)
@@ -144,6 +155,21 @@ const storage = multer.diskStorage({
   }
 });
 
+const uploadMedia = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Faqat rasm va video fayllari ruxsat etilgan!'), false);
+    }
+  }
+});
+
+// Profil rasmi uchun
 const upload = multer({
   storage: storage,
   limits: {
@@ -154,21 +180,6 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Faqat rasm fayllari ruxsat etilgan!'), false);
-    }
-  }
-});
-
-// Video upload uchun multer
-const uploadVideo = multer({
-  storage: storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-  },
-  fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Faqat video fayllari ruxsat etilgan!'), false);
     }
   }
 });
@@ -296,7 +307,7 @@ app.get('/api/shorts', requireLogin, async (req, res) => {
 });
 
 // Shorts yaratish (video yuklash)
-app.post('/api/shorts', requireLogin, uploadVideo.single('video'), async (req, res) => {
+app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, res) => {
   try {
     const { title, description, boostLevel } = req.body;
     
@@ -516,7 +527,7 @@ app.post('/upload', requireLogin, upload.single('profilePic'), async (req, res) 
 });
 
 // Story yaratish (premium foydalanuvchilar uchun cheksiz)
-app.post('/stories', requireLogin, upload.single('media'), async (req, res) => {
+app.post('/stories', requireLogin, uploadMedia.single('media'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Media fayl kerak' });
@@ -604,33 +615,57 @@ app.get('/messages/conversations', requireLogin, async (req, res) => {
   }
 });
 
-// Post yaratish (sponsor va boost qo'shish)
-app.post('/posts', requireLogin, async (req, res) => {
+// Post yaratish (premium funksiyalar bilan)
+app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) => {
   try {
-    const { content, media, isSponsored, sponsorPrice, boostLevel } = req.body;
+    const { content, backgroundColor, textColor, pollQuestion, scheduledAt } = req.body;
     
     if (!content) {
       return res.status(400).json({ success: false, message: "Post matni bo'sh bo'lmasligi kerak" });
     }
     
-    // Boost uchun balans tekshirish
-    if (boostLevel > 0) {
-      const user = await User.findById(req.session.userId);
-      const cost = boostLevel * 10; // Har daraja 10 coin
-      if (user.coins < cost) {
-        return res.status(400).json({ success: false, message: "Yetarli coin yo'q" });
-      }
-      user.coins -= cost;
-      await user.save();
+    const user = await User.findById(req.session.userId);
+    const isPremium = user.isPremium && (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date());
+
+    // Premium funksiyalarni tekshirish
+    if (backgroundColor && !isPremium) {
+      return res.status(403).json({ success: false, message: "Orqa fon rangi faqat premium uchun" });
     }
-    
+    if (textColor && !isPremium) {
+      return res.status(403).json({ success: false, message: "Matn rangi faqat premium uchun" });
+    }
+    if (pollQuestion && !isPremium) {
+      return res.status(403).json({ success: false, message: "Poll faqat premium uchun" });
+    }
+    if (scheduledAt && !isPremium) {
+      return res.status(403).json({ success: false, message: "Rejalashtirish faqat premium uchun" });
+    }
+
+    // Poll variantlarini yig'ish
+    let poll = null;
+    if (pollQuestion && isPremium) {
+      const options = [];
+      for (let i = 0; ; i++) {
+        const opt = req.body[`pollOption${i}`];
+        if (!opt) break;
+        options.push(opt);
+      }
+      if (options.length >= 2) {
+        poll = { question: pollQuestion, options, votes: [] };
+      }
+    }
+
     const newPost = new Post({
       userId: req.session.userId,
       content,
-      media: media || '',
-      isSponsored: isSponsored || false,
-      sponsorPrice: sponsorPrice || 0,
-      boostLevel: parseInt(boostLevel) || 0
+      media: req.file ? '/uploads/' + req.file.filename : '',
+      backgroundColor: isPremium ? backgroundColor || '' : '',
+      textColor: isPremium ? textColor || '' : '',
+      poll: poll || undefined,
+      scheduledAt: isPremium && scheduledAt ? new Date(scheduledAt) : null,
+      isSponsored: false,
+      sponsorPrice: 0,
+      boostLevel: 0
     });
     
     await newPost.save();
@@ -642,16 +677,23 @@ app.post('/posts', requireLogin, async (req, res) => {
   }
 });
 
-// Postlarni olish (boostlanganlarni yuqorida ko'rsatish)
+// Postlarni olish (boostlanganlarni yuqorida ko'rsatish, rejalashtirilganlarni ham)
+// /posts GET endpointini o'zgartiring (server.js da)
 app.get('/posts', requireLogin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
     
-    // Boost darajasiga qarab saralash
-    const posts = await Post.find()
-      .populate('userId', 'username fullName profilePic')
+    // Rejalashtirilgan postlarni ham qo'shish (faqat o'tgan vaqtdagilar)
+    const now = new Date();
+    const posts = await Post.find({ 
+      $or: [
+        { scheduledAt: null },
+        { scheduledAt: { $lte: now } }
+      ]
+    })
+      .populate('userId', 'username fullName profilePic isPremium premiumExpiresAt')
       .populate({
         path: 'comments.userId',
         select: 'username fullName profilePic'
@@ -681,6 +723,30 @@ app.get('/posts/user/:userId', requireLogin, async (req, res) => {
       .sort({ createdAt: -1 });
     
     res.json({ success: true, posts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Poll ovoz berish
+app.post('/posts/:id/poll/vote', requireLogin, async (req, res) => {
+  try {
+    const { optionIndex } = req.body;
+    const post = await Post.findById(req.params.id);
+    
+    if (!post.poll || !post.poll.question) {
+      return res.status(400).json({ success: false, message: "Poll topilmadi" });
+    }
+    
+    const existingVote = post.poll.votes.find(v => v.userId.toString() === req.session.userId);
+    if (existingVote) {
+      return res.status(400).json({ success: false, message: "Alla qachon ovoz berdingiz" });
+    }
+    
+    post.poll.votes.push({ optionIndex: parseInt(optionIndex), userId: req.session.userId });
+    await post.save();
+    
+    res.json({ success: true, votes: post.poll.votes });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1379,9 +1445,7 @@ app.delete('/posts/:id', async (req, res) => {
     
     // Post bilan bog'liq media fayllarni o'chirish
     if (post.media && post.media.length > 0) {
-      for (const media of post.media) {
-        fs.unlinkSync(path.join(__dirname, 'uploads', media.filename));
-      }
+      fs.unlinkSync(path.join(__dirname, 'public', post.media));
     }
     
     // Postni ma'lumotlar bazasidan o'chirish
