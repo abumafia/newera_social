@@ -658,6 +658,34 @@
                         });
                     }
                 }
+
+                // Coin yuborish funksiyasi
+                if (e.target.closest('.coin-btn')) {
+                    const btn = e.target.closest('.coin-btn');
+                    const postId = btn.dataset.postId;
+                    const amountStr = prompt('Necha coin yubormoqchisiz? (minimal 1)');
+                    const amount = parseInt(amountStr);
+                    if (amount && amount >= 1) {
+                        fetch(`/posts/${postId}/send-coin`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ amount })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                showMessage(`${amount} coin muvaffaqiyatli yuborildi!`, 'success');
+                                loadPosts(true); // Postlarni qayta yuklash
+                            } else {
+                                showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Coin yuborishda xatolik:', err);
+                            showMessage('Xatolik yuz berdi', 'error');
+                        });
+                    }
+                }
             });
         });
 
@@ -1263,6 +1291,9 @@
                     `;
                 }
 
+                // Coin yuborish uchun totalCoins hisoblash
+                const totalCoins = post.donations ? post.donations.reduce((sum, d) => sum + d.amount, 0) : 0;
+
                 const shortContent = post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content;
                 const escapedText = post.content.replace(/"/g, '&quot;');
                 const isPremiumUserPost = isPostPremium ? 'Premium' : '';
@@ -1313,6 +1344,11 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                             </svg>
+                        </button>
+
+                        <button class="flex items-center space-x-1 coin-btn hover:text-yellow-400" data-post-id="${post._id}">
+                            <span>💰</span>
+                            <span>${totalCoins}</span>
                         </button>
                     </div>
                     

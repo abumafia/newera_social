@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jonli Efirlar - Social Network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        .stream-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .stream-video {
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .stream-video video {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .stream-info {
+            margin-bottom: 15px;
+        }
+
+        .stream-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .streamer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .streamer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .stream-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .interaction-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .message-user {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .gift-message {
+            background: linear-gradient(135deg, #ffd700, #ff6b6b);
+            color: white;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .gifts-container {
+            margin-top: 20px;
+        }
+
+        .gifts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .gift-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .gift-item:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .gift-emoji {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .gift-price {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .streams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stream-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stream-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stream-thumbnail {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .stream-card-info {
+            padding: 15px;
+        }
+
+        .stream-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stream-card-stats {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .stream-controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .user-coins {
+            background: #ffd700;
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .gift-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            z-index: 1000;
+            animation: giftFly 2s ease-out forwards;
+        }
+
+        @keyframes giftFly {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -100%) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        .no-streams {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .camera-permission {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎥 Jonli Efirlar</div>
+            <div class="nav-buttons">
+                <a href="/" class="btn btn-secondary">🏠 Bosh Sahifa</a>
+                <button class="btn btn-success" onclick="showStartStreamForm()">➕ Yangi Efir</button>
+                <div class="user-coins" id="userCoins">Coins: 0</div>
+            </div>
+        </div>
+
+        <!-- Start Stream Form -->
+        <div id="startStreamForm" class="stream-controls hidden">
+            <h3>Yangi Jonli Efir Boshlash</h3>
+            <div class="form-group">
+                <label for="streamTitle">Efir Nomi:</label>
+                <input type="text" id="streamTitle" placeholder="Efir nomini kiriting..." required>
+            </div>
+            <div class="form-group">
+                <label for="streamDescription">Efir Tavsifi:</label>
+                <textarea id="streamDescription" placeholder="Efir haqida qisqacha..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="streamThumbnail">Efir Rasmi (ixtiyoriy):</label>
+                <input type="file" id="streamThumbnail" accept="image/*">
+            </div>
+            <button class="btn btn-success" onclick="startStream()">🎥 Efirni Boshlash</button>
+            <button class="btn btn-secondary" onclick="hideStartStreamForm()">Bekor Qilish</button>
+        </div>
+
+        <!-- Active Stream View -->
+        <div id="activeStreamView" class="hidden">
+            <div class="main-content">
+                <div class="stream-container">
+                    <div class="stream-video" id="videoPlaceholder">
+                        🎥 Jonli Efir Ko'rsatiladi
+                        <div style="font-size: 14px; margin-top: 10px;">Stream Key: <span id="streamKeyDisplay"></span></div>
+                        <div id="cameraPermission" class="camera-permission hidden">Kameraga ruxsat bering!</div>
+                    </div>
+                    <div class="stream-info">
+                        <div class="stream-title" id="streamTitleDisplay"></div>
+                        <div class="streamer-info">
+                            <img id="streamerAvatar" class="streamer-avatar" src="" alt="Streamer">
+                            <span id="streamerName"></span>
+                        </div>
+                        <div class="stream-stats">
+                            <div class="stat">👁️ <span id="viewersCount">0</span> tomosha</div>
+                            <div class="stat">❤️ <span id="likesCount">0</span></div>
+                            <div class="stat">🎁 <span id="giftsCount">0</span></div>
+                        </div>
+                    </div>
+                    <div class="interaction-buttons">
+                        <button class="btn btn-primary btn-small" onclick="sendLike()">❤️ Like</button>
+                        <button class="btn btn-danger" onclick="endStream()" id="endStreamBtn" style="display: none;">⏹️ Efirni Tugatish</button>
+                    </div>
+                    <div class="gifts-container">
+                        <h4>🎁 Sovg'alarni Tanlang:</h4>
+                        <div class="gifts-grid" id="giftsGrid"></div>
+                    </div>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-header">💬 Chat</div>
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Xabar yozing..." onkeypress="handleChatInput(event)">
+                        <button class="btn btn-primary" onclick="sendComment()">Yuborish</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stream List View -->
+        <div id="streamListView">
+            <h2 style="color: white; margin-bottom: 20px;">🔴 Aktiv Jonli Efirlar</h2>
+            <div class="streams-grid" id="streamsGrid">
+                <!-- Stream cards will be loaded here -->
+            </div>
+            <div id="noStreamsMessage" class="no-streams hidden">
+                Hozirda aktiv jonli efirlar mavjud emas. Birinchi bo'lib efir boshlang!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentStream = null;
+        let currentStreamKey = null;
+        let updateInterval = null;
+        let lastUpdateTime = 0;
+        let localStream = null; // For camera stream
+
+        // Load user data and streams on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadStreams();
+        });
+
+        // Load current user data
+        async function loadUserData() {
+            try {
+                const response = await fetch('/user/me');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    document.getElementById('userCoins').textContent = `Coins: ${currentUser.coins}`;
+                } else {
+                    window.location.href = '/register-login.html';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        // Load active streams
+        async function loadStreams() {
+            try {
+                const response = await fetch('/api/live/streams');
+                const data = await response.json();
+                
+                const streamsGrid = document.getElementById('streamsGrid');
+                const noStreamsMessage = document.getElementById('noStreamsMessage');
+                
+                if (data.success && data.streams.length > 0) {
+                    streamsGrid.innerHTML = '';
+                    noStreamsMessage.classList.add('hidden');
+                    
+                    data.streams.forEach(stream => {
+                        const streamCard = document.createElement('div');
+                        streamCard.className = 'stream-card';
+                        streamCard.onclick = () => joinStream(stream.streamKey);
+                        
+                        streamCard.innerHTML = `
+                            <img src="${stream.thumbnail || '/placeholder-stream.jpg'}" alt="${stream.title}" class="stream-thumbnail">
+                            <div class="stream-card-info">
+                                <div class="stream-card-title">${stream.title}</div>
+                                <div class="streamer-info">
+                                    <img src="${stream.userId.profilePic || '/placeholder-avatar.jpg'}" alt="${stream.userId.fullName}" class="streamer-avatar">
+                                    <span>${stream.userId.fullName}</span>
+                                </div>
+                                <div class="stream-card-stats">
+                                    <span>👁️ ${stream.currentViewers || 0}</span>
+                                    <span>❤️ ${stream.totalLikes || 0}</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        streamsGrid.appendChild(streamCard);
+                    });
+                } else {
+                    streamsGrid.innerHTML = '';
+                    noStreamsMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading streams:', error);
+            }
+        }
+
+        // Show start stream form
+        function showStartStreamForm() {
+            document.getElementById('startStreamForm').classList.remove('hidden');
+            document.getElementById('streamListView').classList.add('hidden');
+        }
+
+        // Hide start stream form
+        function hideStartStreamForm() {
+            document.getElementById('startStreamForm').classList.add('hidden');
+            document.getElementById('streamListView').classList.remove('hidden');
+        }
+
+        // Start a new stream
+        async function startStream() {
+            const title = document.getElementById('streamTitle').value;
+            const description = document.getElementById('streamDescription').value;
+            const thumbnailFile = document.getElementById('streamThumbnail').files[0];
+            
+            if (!title) {
+                alert('Iltimos, efir nomini kiriting!');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            if (thumbnailFile) {
+                formData.append('thumbnail', thumbnailFile);
+            }
+            
+            try {
+                const response = await fetch('/api/live/start', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentStream = data.stream;
+                    currentStreamKey = data.streamKey;
+                    showActiveStreamView();
+                    startStreamUpdates();
+                } else {
+                    alert('Xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error starting stream:', error);
+                alert('Server xatosi yuz berdi');
+            }
+        }
+
+        // Show active stream view
+        function showActiveStreamView() {
+            document.getElementById('startStreamForm').classList.add('hidden');
+            document.getElementById('streamListView').classList.add('hidden');
+            document.getElementById('activeStreamView').classList.remove('hidden');
+            
+            document.getElementById('streamTitleDisplay').textContent = currentStream.title;
+            document.getElementById('streamerName').textContent = currentStream.userId.fullName;
+            document.getElementById('streamerAvatar').src = currentStream.userId.profilePic || '/placeholder-avatar.jpg';
+            document.getElementById('streamKeyDisplay').textContent = currentStreamKey;
+            
+            // Show end stream button only for stream owner
+            if (currentUser._id === currentStream.userId._id) {
+                document.getElementById('endStreamBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('endStreamBtn').style.display = 'none';
+            }
+            
+            // Setup video
+            const videoPlaceholder = document.getElementById('videoPlaceholder');
+            const video = document.createElement('video');
+            video.autoplay = true;
+            video.muted = true; // Mute for local preview
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.borderRadius = '10px';
+            video.style.objectFit = 'cover';
+            videoPlaceholder.innerHTML = '';
+            videoPlaceholder.appendChild(video);
+
+            if (currentUser._id === currentStream.userId._id) {
+                // Streamer: Start camera
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(stream => {
+                        localStream = stream;
+                        video.srcObject = stream;
+                        document.getElementById('cameraPermission').classList.add('hidden');
+                    })
+                    .catch(err => {
+                        console.error('Camera error:', err);
+                        videoPlaceholder.innerHTML = 'Kameraga ruxsat bering!';
+                        document.getElementById('cameraPermission').classList.remove('hidden');
+                    });
+            } else {
+                // Viewer: Placeholder (real implementation would fetch remote stream)
+                video.srcObject = null;
+                videoPlaceholder.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">🎥 Jonli Efir Ko\'rsatiladi (Demo rejimida)</div>';
+            }
+            
+            loadGifts();
+            lastUpdateTime = 0; // Reset for new session
+        }
+
+        // Join a stream as viewer
+        async function joinStream(streamKey) {
+            try {
+                const response = await fetch('/api/live/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ streamKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentStream = data.stream;
+                    currentStreamKey = streamKey;
+                    showActiveStreamView();
+                    startStreamUpdates();
+                } else {
+                    alert('Xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error joining stream:', error);
+                alert('Server xatosi yuz berdi');
+            }
+        }
+
+        // End the current stream
+        async function endStream() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop()); // Stop camera
+            }
+            if (!confirm('Haqiqatan ham efirni tugatmoqchimisiz?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/live/end', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ streamKey: currentStreamKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    stopStreamUpdates();
+                    currentStream = null;
+                    currentStreamKey = null;
+                    document.getElementById('activeStreamView').classList.add('hidden');
+                    document.getElementById('streamListView').classList.remove('hidden');
+                    loadStreams();
+                    loadUserData();
+                    alert('Efir muvaffaqiyatli tugatildi!');
+                } else {
+                    alert('Xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error ending stream:', error);
+                alert('Server xatosi yuz berdi');
+            }
+        }
+
+        // Start real-time updates for the stream
+        function startStreamUpdates() {
+            updateInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/live/updates/${currentStreamKey}?lastUpdateTime=${lastUpdateTime}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        updateStreamUI(data.updates);
+                        lastUpdateTime = data.updates.lastUpdateTime || Date.now();
+                    }
+                } catch (error) {
+                    console.error('Error updating stream:', error);
+                }
+            }, 2000);
+        }
+
+        // Stop stream updates
+        function stopStreamUpdates() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            lastUpdateTime = 0;
+            
+            // Send leave request
+            if (currentStreamKey) {
+                fetch('/api/live/leave', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ streamKey: currentStreamKey })
+                }).catch(console.error);
+            }
+        }
+
+        // Update stream UI with new data
+        function updateStreamUI(updates) {
+            document.getElementById('viewersCount').textContent = updates.viewersCount;
+            document.getElementById('likesCount').textContent = updates.likesCount;
+            document.getElementById('giftsCount').textContent = updates.giftsCount;
+            
+            // Add new comments (no duplicates due to timestamp filter)
+            updates.newComments.forEach(comment => {
+                addMessageToChat(comment.user, comment.content, false);
+            });
+            
+            // Add new gifts with animation (no duplicates)
+            updates.newGifts.forEach(gift => {
+                addMessageToChat(gift.user, `🎁 ${gift.gift.image} ${gift.gift.name} sovg'a yubordi!`, true);
+                showGiftAnimation(gift.gift.image);
+            });
+        }
+
+        // Send comment to stream
+        async function sendComment() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            
+            if (!content) return;
+            
+            try {
+                const response = await fetch('/api/live/comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        streamKey: currentStreamKey,
+                        content: content
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    addMessageToChat(currentUser, content, false);
+                } else {
+                    alert('Xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error sending comment:', error);
+            }
+        }
+
+        // Handle Enter key in chat input
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendComment();
+            }
+        }
+
+        // Send like to stream
+        async function sendLike() {
+            try {
+                const response = await fetch('/api/live/like', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        streamKey: currentStreamKey
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('likesCount').textContent = data.likesCount;
+                    addMessageToChat(currentUser, '❤️ Like bosdi!', false);
+                }
+            } catch (error) {
+                console.error('Error sending like:', error);
+            }
+        }
+
+        // Load available gifts
+        async function loadGifts() {
+            try {
+                const response = await fetch('/api/live/gifts');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const giftsGrid = document.getElementById('giftsGrid');
+                    giftsGrid.innerHTML = '';
+                    
+                    data.gifts.forEach(gift => {
+                        const giftItem = document.createElement('div');
+                        giftItem.className = 'gift-item';
+                        giftItem.onclick = () => sendGift(gift.id);
+                        
+                        giftItem.innerHTML = `
+                            <div class="gift-emoji">${gift.image}</div>
+                            <div class="gift-name">${gift.name}</div>
+                            <div class="gift-price">${gift.price} coins</div>
+                        `;
+                        
+                        giftsGrid.appendChild(giftItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading gifts:', error);
+            }
+        }
+
+        // Send gift to stream
+        async function sendGift(giftId) {
+            try {
+                const response = await fetch('/api/live/gift', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        streamKey: currentStreamKey,
+                        giftId: giftId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadUserData(); // Update coins
+                    addMessageToChat(currentUser, `🎁 ${data.gift.gift.image} ${data.gift.gift.name} sovg'a yubordi!`, true);
+                    showGiftAnimation(data.gift.gift.image);
+                } else {
+                    alert('Xatolik: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error sending gift:', error);
+            }
+        }
+
+        // Add message to chat
+        function addMessageToChat(user, content, isGift) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isGift ? 'gift-message' : ''}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-user">${user.fullName}:</div>
+                <div>${content}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show gift animation
+        function showGiftAnimation(giftEmoji) {
+            const animation = document.createElement('div');
+            animation.className = 'gift-animation';
+            animation.textContent = giftEmoji;
+            animation.style.fontSize = '80px';
+            
+            document.body.appendChild(animation);
+            
+            setTimeout(() => {
+                document.body.removeChild(animation);
+            }, 2000);
+        }
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            stopStreamUpdates();
+        });
+    </script>
+</body>
+</html>

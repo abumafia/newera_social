@@ -1,14 +1,28 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const session = require('express-session');
 const path = require('path');
-const fs = require('fs');
 const MongoStore = require('connect-mongo');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const liveStreams = new Map(); // Real-time storage for active streams
+const liveStreamComments = new Map(); // Store comments for each stream
+const liveStreamLikes = new Map(); // Store likes for each stream
+const liveStreamViewers = new Map(); // Store viewers for each stream
+const liveStreamGifts = new Map(); // Store gifts for each stream
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Cloudinary sozlamalari (Render da environment variables qo'shing: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // MongoDB ulanish
 mongoose.connect('mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority', {
@@ -22,7 +36,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   fullName: { type: String, required: true },
-  profilePic: { type: String, default: '' },
+  profilePic: { type: String, default: '' }, // Cloudinary URL
   bio: { type: String, default: '' },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -39,7 +53,7 @@ const PostSchema = new mongoose.Schema({
   title: { type: String, default: '' },
   description: { type: String, default: '' },
   content: { type: String, required: true },
-  media: { type: String, default: '' },
+  media: { type: String, default: '' }, // Cloudinary URL
   backgroundColor: { type: String, default: '' }, // Premium uchun orqa fon rangi
   textColor: { type: String, default: '' }, // Premium uchun matn rangi
   poll: {
@@ -56,6 +70,10 @@ const PostSchema = new mongoose.Schema({
   boostLevel: { type: Number, default: 0 }, // Postni ko'tarish darajasi (pullik)
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   shares: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  donations: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    amount: { type: Number, required: true }
+  }], // Coin yuborish tizimi
   comments: [{
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
@@ -102,7 +120,7 @@ const PaymentRequestSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, enum: ['balance', 'coins', 'premium'], required: true },
   amount: { type: Number, required: true },
-  screenshot: { type: String, required: true }, // Fayl yo'li
+  screenshot: { type: String, required: true }, // Cloudinary URL
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   notes: { type: String, default: '' }, // Admin izohi
   createdAt: { type: Date, default: Date.now }
@@ -123,12 +141,39 @@ const WithdrawalSchema = new mongoose.Schema({
 // Story Schema
 const StorySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  media: { type: String, required: true },
+  media: { type: String, required: true }, // Cloudinary URL
   caption: { type: String, default: '' },
   expiresAt: { type: Date, required: true },
   viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now }
 });
+
+// Live Stream Schema
+const LiveStreamSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  thumbnail: { type: String, default: '' }, // Cloudinary URL
+  streamKey: { type: String, required: true, unique: true },
+  isActive: { type: Boolean, default: true },
+  startedAt: { type: Date, default: Date.now },
+  endedAt: { type: Date, default: null },
+  viewersCount: { type: Number, default: 0 },
+  totalLikes: { type: Number, default: 0 },
+  totalGifts: { type: Number, default: 0 },
+  earnings: { type: Number, default: 0 }
+});
+
+const LiveStream = mongoose.model('LiveStream', LiveStreamSchema);
+
+// Gift Schema for live streams
+const GiftSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true }, // Coins cost
+  image: { type: String, required: true } // Cloudinary URL
+});
+
+const Gift = mongoose.model('Gift', GiftSchema);
 
 const User = mongoose.model('User', UserSchema);
 const Post = mongoose.model('Post', PostSchema);
@@ -138,25 +183,20 @@ const PaymentRequest = mongoose.model('PaymentRequest', PaymentRequestSchema);
 const Withdrawal = mongoose.model('Withdrawal', WithdrawalSchema);
 const Story = mongoose.model('Story', StorySchema);
 
-// Uploads papkasini yaratish
-const uploadsDir = 'public/uploads';
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Multer sozlamalari (umumiy media uchun: rasm va video)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir)
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+// Cloudinary storage
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'social-media',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'],
+    resource_type: 'auto',
+    transformation: [{ quality: 'auto' }]
   }
 });
 
+// Multer sozlamalari (umumiy media uchun: rasm va video)
 const uploadMedia = multer({
-  storage: storage,
+  storage: cloudinaryStorage,
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
@@ -169,9 +209,9 @@ const uploadMedia = multer({
   }
 });
 
-// Profil rasmi uchun
-const upload = multer({
-  storage: storage,
+// Profil rasmi va screenshot uchun (faqat rasm)
+const uploadProfile = multer({
+  storage: cloudinaryStorage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -186,7 +226,6 @@ const upload = multer({
 
 // Middleware
 app.use(express.static('public'));
-app.use('/uploads', express.static('public/uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -198,9 +237,9 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 1 kun
     store: MongoStore.create({
-    mongoUrl: 'mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority',
-    ttl: 24 * 60 * 60 // 1 kun
-  })
+      mongoUrl: 'mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority',
+      ttl: 24 * 60 * 60 // 1 kun
+    })
   }
 }));
 
@@ -266,6 +305,390 @@ async function calcPayouts(post) {
 }
 
 // Routes
+
+// Create a new live stream
+app.post('/api/live/start', requireLogin, uploadProfile.single('thumbnail'), async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ success: false, message: "Stream nomi kerak" });
+    }
+
+    // Generate unique stream key
+    const streamKey = `live_${req.session.userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const newStream = new LiveStream({
+      userId: req.session.userId,
+      title,
+      description: description || '',
+      thumbnail: req.file ? req.file.path : '',
+      streamKey,
+      isActive: true,
+      startedAt: new Date()
+    });
+
+    await newStream.save();
+    await newStream.populate('userId', 'username fullName profilePic');
+
+    // Initialize real-time data
+    liveStreams.set(streamKey, {
+      streamId: newStream._id,
+      userId: req.session.userId,
+      title,
+      description: description || '',
+      isActive: true,
+      startedAt: new Date()
+    });
+    
+    liveStreamComments.set(streamKey, []);
+    liveStreamLikes.set(streamKey, new Set());
+    liveStreamViewers.set(streamKey, new Set());
+    liveStreamGifts.set(streamKey, []);
+
+    res.json({ 
+      success: true, 
+      stream: newStream,
+      streamKey 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// End a live stream
+app.post('/api/live/end', requireLogin, async (req, res) => {
+  try {
+    const { streamKey } = req.body;
+    
+    const stream = await LiveStream.findOne({ 
+      streamKey, 
+      userId: req.session.userId 
+    });
+    
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Stream topilmadi" });
+    }
+
+    stream.isActive = false;
+    stream.endedAt = new Date();
+    stream.viewersCount = liveStreamViewers.get(streamKey)?.size || 0;
+    stream.totalLikes = liveStreamLikes.get(streamKey)?.size || 0;
+    
+    // Calculate total gifts value and earnings
+    const gifts = liveStreamGifts.get(streamKey) || [];
+    const totalGiftsValue = gifts.reduce((sum, gift) => sum + gift.gift.price, 0);
+    stream.totalGifts = gifts.length;
+    stream.earnings = totalGiftsValue; // Total coins earned
+
+    await stream.save();
+
+    // Cleanup real-time data
+    liveStreams.delete(streamKey);
+    liveStreamComments.delete(streamKey);
+    liveStreamLikes.delete(streamKey);
+    liveStreamViewers.delete(streamKey);
+    liveStreamGifts.delete(streamKey);
+
+    res.json({ success: true, message: "Stream muvaffaqiyatli tugatildi", stream });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get all active live streams
+app.get('/api/live/streams', requireLogin, async (req, res) => {
+  try {
+    const activeStreams = await LiveStream.find({ 
+      isActive: true 
+    })
+    .populate('userId', 'username fullName profilePic')
+    .sort({ startedAt: -1 });
+
+    // Add real-time viewer counts
+    const streamsWithViewers = activeStreams.map(stream => {
+      const viewers = liveStreamViewers.get(stream.streamKey);
+      return {
+        ...stream.toObject(),
+        currentViewers: viewers ? viewers.size : 0,
+        totalLikes: liveStreamLikes.get(stream.streamKey)?.size || 0
+      };
+    });
+
+    res.json({ success: true, streams: streamsWithViewers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Join a live stream as viewer
+app.post('/api/live/join', requireLogin, async (req, res) => {
+  try {
+    const { streamKey } = req.body;
+    
+    const stream = await LiveStream.findOne({ streamKey, isActive: true }).populate('userId', 'username fullName profilePic');
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
+    }
+
+    // Add user to viewers
+    if (!liveStreamViewers.has(streamKey)) {
+      liveStreamViewers.set(streamKey, new Set());
+    }
+    liveStreamViewers.get(streamKey).add(req.session.userId);
+
+    const comments = liveStreamComments.get(streamKey) || [];
+    const likesCount = liveStreamLikes.get(streamKey)?.size || 0;
+    const gifts = liveStreamGifts.get(streamKey) || [];
+
+    res.json({ 
+      success: true, 
+      stream: {
+        ...stream.toObject(),
+        currentViewers: liveStreamViewers.get(streamKey).size,
+        comments: comments.slice(-50), // Last 50 comments
+        likesCount,
+        gifts: gifts.slice(-20) // Last 20 gifts
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Leave a live stream
+app.post('/api/live/leave', requireLogin, async (req, res) => {
+  try {
+    const { streamKey } = req.body;
+    
+    if (liveStreamViewers.has(streamKey)) {
+      liveStreamViewers.get(streamKey).delete(req.session.userId);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Send comment to live stream
+app.post('/api/live/comment', requireLogin, async (req, res) => {
+  try {
+    const { streamKey, content } = req.body;
+    
+    if (!content || !streamKey) {
+      return res.status(400).json({ success: false, message: "Comment va stream key kerak" });
+    }
+
+    const stream = await LiveStream.findOne({ streamKey, isActive: true });
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
+    }
+
+    const user = await User.findById(req.session.userId).select('username fullName profilePic');
+    
+    const comment = {
+      id: Date.now().toString(),
+      userId: req.session.userId,
+      user: {
+        username: user.username,
+        fullName: user.fullName,
+        profilePic: user.profilePic
+      },
+      content,
+      timestamp: new Date()
+    };
+
+    if (!liveStreamComments.has(streamKey)) {
+      liveStreamComments.set(streamKey, []);
+    }
+    
+    liveStreamComments.get(streamKey).push(comment);
+
+    // Keep only last 1000 comments to prevent memory issues
+    const comments = liveStreamComments.get(streamKey);
+    if (comments.length > 1000) {
+      liveStreamComments.set(streamKey, comments.slice(-1000));
+    }
+
+    res.json({ success: true, comment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Like a live stream
+app.post('/api/live/like', requireLogin, async (req, res) => {
+  try {
+    const { streamKey } = req.body;
+    
+    const stream = await LiveStream.findOne({ streamKey, isActive: true });
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
+    }
+
+    if (!liveStreamLikes.has(streamKey)) {
+      liveStreamLikes.set(streamKey, new Set());
+    }
+
+    const likes = liveStreamLikes.get(streamKey);
+    likes.add(req.session.userId);
+
+    res.json({ 
+      success: true, 
+      likesCount: likes.size 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get available gifts
+app.get('/api/live/gifts', requireLogin, async (req, res) => {
+  try {
+    // Sample gifts - in real app, you'd store these in database
+    const gifts = [
+      { id: 1, name: 'Rose', price: 10, image: '🌹' },
+      { id: 2, name: 'Crown', price: 50, image: '👑' },
+      { id: 3, name: 'Car', price: 100, image: '🚗' },
+      { id: 4, name: 'Diamond', price: 200, image: '💎' },
+      { id: 5, name: 'Rocket', price: 500, image: '🚀' },
+      { id: 6, name: 'Super Star', price: 1000, image: '⭐' }
+    ];
+
+    res.json({ success: true, gifts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Send gift to live stream
+app.post('/api/live/gift', requireLogin, async (req, res) => {
+  try {
+    const { streamKey, giftId } = req.body;
+    
+    const stream = await LiveStream.findOne({ streamKey, isActive: true }).populate('userId', 'username fullName profilePic');
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
+    }
+
+    // Get gift details
+    const gifts = [
+      { id: 1, name: 'Rose', price: 10, image: '🌹' },
+      { id: 2, name: 'Crown', price: 50, image: '👑' },
+      { id: 3, name: 'Car', price: 100, image: '🚗' },
+      { id: 4, name: 'Diamond', price: 200, image: '💎' },
+      { id: 5, name: 'Rocket', price: 500, image: '🚀' },
+      { id: 6, name: 'Super Star', price: 1000, image: '⭐' }
+    ];
+
+    const gift = gifts.find(g => g.id === parseInt(giftId));
+    if (!gift) {
+      return res.status(400).json({ success: false, message: "Gift topilmadi" });
+    }
+
+    // Check user coins
+    const user = await User.findById(req.session.userId);
+    if (user.coins < gift.price) {
+      return res.status(400).json({ success: false, message: "Yetarli coin yo'q" });
+    }
+
+    // Deduct coins from sender
+    user.coins -= gift.price;
+    await user.save();
+
+    // Add full coins to streamer
+    const streamer = await User.findById(stream.userId._id);
+    streamer.coins += gift.price;
+    await streamer.save();
+
+    // Add gift to stream
+    if (!liveStreamGifts.has(streamKey)) {
+      liveStreamGifts.set(streamKey, []);
+    }
+
+    const giftData = {
+      id: Date.now().toString(),
+      userId: req.session.userId,
+      user: {
+        username: user.username,
+        fullName: user.fullName,
+        profilePic: user.profilePic
+      },
+      gift: gift,
+      timestamp: new Date()
+    };
+
+    liveStreamGifts.get(streamKey).push(giftData);
+
+    // Keep only last 500 gifts
+    const streamGifts = liveStreamGifts.get(streamKey);
+    if (streamGifts.length > 500) {
+      liveStreamGifts.set(streamKey, streamGifts.slice(-500));
+    }
+
+    res.json({ 
+      success: true, 
+      gift: giftData,
+      remainingCoins: user.coins
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get live stream updates (for real-time updates)
+app.get('/api/live/updates/:streamKey', requireLogin, async (req, res) => {
+  try {
+    const { streamKey } = req.params;
+    const lastUpdateTime = req.query.lastUpdateTime ? new Date(parseInt(req.query.lastUpdateTime)) : new Date(0);
+    
+    const stream = await LiveStream.findOne({ streamKey, isActive: true });
+    if (!stream) {
+      return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
+    }
+
+    const comments = liveStreamComments.get(streamKey) || [];
+    const likesCount = liveStreamLikes.get(streamKey)?.size || 0;
+    const viewersCount = liveStreamViewers.get(streamKey)?.size || 0;
+    const gifts = liveStreamGifts.get(streamKey) || [];
+    const giftsCount = gifts.length;
+
+    // Filter new items based on timestamp to avoid duplicates
+    const newComments = comments.filter(c => c.timestamp > lastUpdateTime);
+    const newGifts = gifts.filter(g => g.timestamp > lastUpdateTime);
+
+    res.json({
+      success: true,
+      updates: {
+        viewersCount,
+        likesCount,
+        giftsCount,
+        newComments,
+        newGifts,
+        lastUpdateTime: Date.now()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get user's live stream history
+app.get('/api/live/history', requireLogin, async (req, res) => {
+  try {
+    const streams = await LiveStream.find({ 
+      userId: req.session.userId 
+    })
+    .populate('userId', 'username fullName profilePic')
+    .sort({ startedAt: -1 })
+    .limit(20);
+
+    res.json({ success: true, streams });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Asosiy sahifa
 app.get('/', requireLogin, (req, res) => {
@@ -337,7 +760,7 @@ app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, r
       title,
       description,
       content: description,
-      media: '/uploads/' + req.file.filename,
+      media: req.file.path, // Cloudinary URL
       boostLevel: finalBoostLevel
     });
     
@@ -507,8 +930,8 @@ app.put('/user', requireLogin, async (req, res) => {
   }
 });
 
-// Rasm yuklash
-app.post('/upload', requireLogin, upload.single('profilePic'), async (req, res) => {
+// Rasm yuklash (profil uchun)
+app.post('/upload', requireLogin, uploadProfile.single('profilePic'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Fayl yuklanmadi' });
@@ -516,7 +939,7 @@ app.post('/upload', requireLogin, upload.single('profilePic'), async (req, res) 
     
     const user = await User.findByIdAndUpdate(
       req.session.userId,
-      { profilePic: '/uploads/' + req.file.filename },
+      { profilePic: req.file.path }, // Cloudinary URL
       { new: true }
     ).select('-password');
     
@@ -537,7 +960,7 @@ app.post('/stories', requireLogin, uploadMedia.single('media'), async (req, res)
     
     const newStory = new Story({
       userId: req.session.userId,
-      media: '/uploads/' + req.file.filename,
+      media: req.file.path, // Cloudinary URL
       caption: req.body.caption || '',
       expiresAt
     });
@@ -658,7 +1081,7 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
     const newPost = new Post({
       userId: req.session.userId,
       content,
-      media: req.file ? '/uploads/' + req.file.filename : '',
+      media: req.file ? req.file.path : '', // Cloudinary URL
       backgroundColor: isPremium ? backgroundColor || '' : '',
       textColor: isPremium ? textColor || '' : '',
       poll: poll || undefined,
@@ -678,7 +1101,6 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
 });
 
 // Postlarni olish (boostlanganlarni yuqorida ko'rsatish, rejalashtirilganlarni ham)
-// /posts GET endpointini o'zgartiring (server.js da)
 app.get('/posts', requireLogin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -793,6 +1215,36 @@ app.post('/posts/:id/share', requireLogin, async (req, res) => {
     await post.save();
     await calcPayouts(post);
     res.json({ success: true, shares: post.shares.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Postga coin yuborish (rag'batlantirish tizimi)
+app.post('/posts/:id/send-coin', requireLogin, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount < 1) {
+      return res.status(400).json({ success: false, message: 'Minimal 1 coin yuborish kerak' });
+    }
+    const parsedAmount = parseInt(amount);
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post topilmadi' });
+    }
+    const sender = await User.findById(req.session.userId);
+    if (sender.coins < parsedAmount) {
+      return res.status(400).json({ success: false, message: 'Yetarli coin yo\'q' });
+    }
+    const receiver = await User.findById(post.userId);
+    sender.coins -= parsedAmount;
+    receiver.coins += parsedAmount;
+    post.donations.push({ userId: sender._id, amount: parsedAmount });
+    await sender.save();
+    await receiver.save();
+    await post.save();
+    const totalCoins = post.donations.reduce((sum, d) => sum + d.amount, 0);
+    res.json({ success: true, totalCoins });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1026,7 +1478,7 @@ app.post('/messages/:userId/read', requireLogin, async (req, res) => {
 });
 
 // To'lov so'rovi yuborish (screenshot bilan)
-app.post('/payment/request', requireLogin, upload.single('screenshot'), async (req, res) => {
+app.post('/payment/request', requireLogin, uploadProfile.single('screenshot'), async (req, res) => {
   try {
     const { type, amount } = req.body;
     
@@ -1038,7 +1490,7 @@ app.post('/payment/request', requireLogin, upload.single('screenshot'), async (r
       userId: req.session.userId,
       type,
       amount: parseFloat(amount),
-      screenshot: '/uploads/' + req.file.filename
+      screenshot: req.file.path // Cloudinary URL
     });
     
     await newRequest.save();
@@ -1139,10 +1591,10 @@ app.put('/admin/payments/:id/reject', requireAdmin, async (req, res) => {
 // Reklama olish (oddiy reklama, premium uchun maxsus)
 app.get('/ads', requireLogin, async (req, res) => {
   try {
-    // Simulyatsiya: oddiy reklamalar
+    // Simulyatsiya: oddiy reklamalar (Cloudinary ga yuklangan deb faraz qilamiz, yoki o'zgartiring)
     const ads = [
-      { id: 1, title: 'Reklama 1', image: '/ads/ad1.jpg', url: 'https://example.com' },
-      { id: 2, title: 'Reklama 2', image: '/ads/ad2.jpg', url: 'https://example.com' }
+      { id: 1, title: 'Reklama 1', image: 'https://res.cloudinary.com/your-cloud/image/upload/v1/social-media/ad1.jpg', url: 'https://example.com' },
+      { id: 2, title: 'Reklama 2', image: 'https://res.cloudinary.com/your-cloud/image/upload/v1/social-media/ad2.jpg', url: 'https://example.com' }
     ];
     
     // Premium foydalanuvchilar uchun kam reklama
@@ -1239,6 +1691,13 @@ app.get('/admin/posts', requireAdmin, async (req, res) => {
 // Postni o'chirish
 app.delete('/admin/posts/:id', requireAdmin, async (req, res) => {
   try {
+    const post = await Post.findById(req.params.id);
+    if (post.media) {
+      const publicId = cloudinary.utils.extractPublicId(post.media);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
     await Post.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: "Post muvaffaqiyatli o'chirildi" });
   } catch (error) {
@@ -1251,6 +1710,15 @@ app.delete('/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     // Foydalanuvchining postlarini ham o'chirish
+    const posts = await Post.find({ userId: req.params.id });
+    for (const post of posts) {
+      if (post.media) {
+        const publicId = cloudinary.utils.extractPublicId(post.media);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+    }
     await Post.deleteMany({ userId: req.params.id });
     res.json({ success: true, message: "Foydalanuvchi muvaffaqiyatli o'chirildi" });
   } catch (error) {
@@ -1417,19 +1885,8 @@ app.put('/admin/withdrawals/:id/reject', requireAdmin, async (req, res) => {
   }
 });
 
-// Xato ishlovchisi
-app.use((error, req, res, next) => {
-  console.error(error);
-  res.status(500).json({ success: false, message: error.message });
-});
-
-// 404 xatosi
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: "Sahifa topilmadi" });
-});
-
-// Postni o'chirish
-app.delete('/posts/:id', async (req, res) => {
+// Postni o'chirish (foydalanuvchi uchun)
+app.delete('/posts/:id', requireLogin, async (req, res) => {
   try {
     const postId = req.params.id;
     const post = await Post.findById(postId);
@@ -1438,14 +1895,16 @@ app.delete('/posts/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post topilmadi' });
     }
     
-    // Post egasini tekshirish (agar kerak bo'lsa)
-    // if (post.userId.toString() !== req.user.id) {
-    //   return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
-    // }
+    if (post.userId.toString() !== req.session.userId) {
+      return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
+    }
     
-    // Post bilan bog'liq media fayllarni o'chirish
-    if (post.media && post.media.length > 0) {
-      fs.unlinkSync(path.join(__dirname, 'public', post.media));
+    // Post bilan bog'liq media fayllarni Cloudinary dan o'chirish
+    if (post.media) {
+      const publicId = cloudinary.utils.extractPublicId(post.media);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
     }
     
     // Postni ma'lumotlar bazasidan o'chirish
@@ -1459,7 +1918,7 @@ app.delete('/posts/:id', async (req, res) => {
 });
 
 // Postni tahrirlash
-app.put('/posts/:id', async (req, res) => {
+app.put('/posts/:id', requireLogin, async (req, res) => {
   try {
     const postId = req.params.id;
     const { content } = req.body;
@@ -1470,10 +1929,9 @@ app.put('/posts/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post topilmadi' });
     }
     
-    // Post egasini tekshirish (agar kerak bo'lsa)
-    // if (post.userId.toString() !== req.user.id) {
-    //   return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
-    // }
+    if (post.userId.toString() !== req.session.userId) {
+      return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
+    }
     
     // Post kontentini yangilash
     post.content = content;
@@ -1484,6 +1942,17 @@ app.put('/posts/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server xatosi' });
   }
+});
+
+// Xato ishlovchisi
+app.use((error, req, res, next) => {
+  console.error(error);
+  res.status(500).json({ success: false, message: error.message });
+});
+
+// 404 xatosi
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Sahifa topilmadi" });
 });
 
 // Serverni ishga tushurish

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Yangiliklar</title>
+    <meta property="og:title" content="NewEra - Yangiliklar">
+    <meta property="og:description" content="NewEra yangiliklari - Google News uslubida">
+    <meta property="og:image" content="./uploads/icon.png">
+    <meta property="og:url" content="https://newera.com/news">
+    <meta property="og:site_name" content="NewEra">
+    <meta property="og:type" content="website">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Index.html dan ko'chirilgan barcha stillar (glass-card, glass-nav, va hokazo) */
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-input {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .glass-input:focus {
+            background: rgba(40, 40, 40, 0.7);
+            border-color: rgba(29, 161, 242, 0.6);
+            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+        }
+        
+        .glass-button {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-button:hover {
+            background: rgba(50, 50, 50, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Qolgan stillar index.html dan nusxalangan (hover-animation, scrollbar, va hokazo) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.6);
+        }
+        
+        /* Kategoriya filtrlari uchun */
+        .category-filter {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Hashtag uslubi */
+        .hashtag {
+            background: rgba(29, 161, 242, 0.2);
+            color: #1DA1F2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+        }
+        
+        /* YouTube iframe uchun responsive */
+        .youtube-iframe {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .youtube-iframe iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Mobile bottom nav (asosiy + news) */
+        @media (max-width: 640px) {
+            .bottom-nav-item {
+                flex: 1;
+                padding: 0.5rem;
+                text-align: center;
+                color: #a0a0a0;
+                transition: color 0.2s ease;
+            }
+
+            .bottom-nav-item.active {
+                color: #1DA1F2;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Navbar (index.html dan o'xshash, lekin news uchun) -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="text-xl font-bold">
+                    <a href="/" class="flex items-center">
+                        <img src="./uploads/icon.png" alt="NewEra Logo" class="h-8 mr-2 filter brightness-125">
+                        <span class="hidden sm:inline">NewEra</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="/" class="twitter-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors">Asosiy</a>
+                    <a href="/news" class="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors">Yangiliklar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Asosiy kontent -->
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-24">
+        <!-- Kategoriya filtrlari -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button class="category-filter px-4 py-2 rounded-full text-sm" data-category="all">Barchasi</button>
+            <button class="category-filter px-4 py-2 rounded-full text-sm" data-category="sport">Sport</button>
+            <button class="category-filter px-4 py-2 rounded-full text-sm" data-category="texnologiya">Texnologiya</button>
+            <button class="category-filter px-4 py-2 rounded-full text-sm" data-category="siyosat">Siyosat</button>
+            <!-- Dinamik kategoriyalar JS orqali -->
+        </div>
+
+        <!-- News ro'yxati -->
+        <div id="newsContainer" class="space-y-6">
+            <!-- News JS orqali yuklanadi -->
+        </div>
+
+        <!-- Ko'proq yuklash -->
+        <div id="loadMoreContainer" class="mt-6 text-center">
+            <button id="loadMoreBtn" class="glass-button text-gray-300 px-4 py-2 rounded-full hover:bg-gray-700 transition-colors">Ko'proq yuklash</button>
+        </div>
+    </div>
+
+    <!-- Mobil Pastki Navbar -->
+    <nav class="fixed bottom-0 left-0 w-full bg-gray-900/80 backdrop-blur-md border-t border-gray-700 sm:hidden z-50">
+        <div class="flex justify-around items-center py-2 text-gray-400">
+            <a href="/" class="bottom-nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="text-xs">Asosiy</span>
+            </a>
+            <a href="/news" class="bottom-nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+                <span class="text-xs">Yangiliklar</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        let currentPage = 1;
+        let isLoading = false;
+        let deviceId = localStorage.getItem('deviceId');
+        let currentDevice = null;
+        let currentCategory = 'all';
+
+        // Device ID generate va register
+        async function initializeDevice() {
+            if (!deviceId) {
+                deviceId = uuidv4();
+                localStorage.setItem('deviceId', deviceId);
+            }
+            try {
+                const response = await fetch('/api/device/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    currentDevice = data.deviceId;
+                }
+            } catch (error) {
+                console.error('Device registratsiyada xatolik:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeDevice();
+            loadNews();
+
+            // Kategoriya filtrlari
+            document.querySelectorAll('.category-filter').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.category-filter').forEach(b => b.classList.remove('bg-yellow-500'));
+                    e.target.classList.add('bg-yellow-500');
+                    currentCategory = e.target.dataset.category;
+                    currentPage = 1;
+                    document.getElementById('newsContainer').innerHTML = '';
+                    loadNews();
+                });
+            });
+
+            document.getElementById('loadMoreBtn').addEventListener('click', loadNews);
+        });
+
+        async function loadNews() {
+            if (isLoading) return;
+            isLoading = true;
+
+            try {
+                let url = `/api/news?page=${currentPage}`;
+                if (currentCategory !== 'all') url += `&category=${currentCategory}`;
+                const response = await fetch(url, {
+                    headers: { 'device-id': deviceId }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderNews(data.articles);
+                    currentPage++;
+                }
+            } catch (error) {
+                console.error('News yuklashda xatolik:', error);
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function renderNews(articles) {
+            const container = document.getElementById('newsContainer');
+            articles.forEach(article => {
+                const element = document.createElement('div');
+                element.className = 'glass-card p-5 rounded-2xl';
+                element.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <img src="${article.journalistId.profilePic || 'https://via.placeholder.com/40'}" alt="Jurnalist" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <a href="#" class="font-semibold hover:text-blue-400">${article.journalistId.fullName}</a>
+                            <p class="text-gray-500 text-sm">${article.journalistId.bio || ''}</p>
+                            <p class="text-gray-400 text-xs">${article.journalistId.email}</p>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2">${article.title}</h2>
+                    <p class="mb-4 text-gray-300">${article.description.substring(0, 200)}...</p>
+                    ${article.image ? `<img src="${article.image}" alt="News" class="w-full rounded-xl mb-4">` : ''}
+                    ${article.video ? `
+                        <div class="youtube-iframe mb-4">
+                            <iframe src="https://www.youtube.com/embed/${article.video.split('v=')[1]}" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    ` : ''}
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span>Kategoriya: <span class="text-blue-400">${article.category}</span></span>
+                        <span>Ko'rishlar: ${article.views.length}</span>
+                    </div>
+                    <div class="flex flex-wrap mb-4">
+                        ${article.hashtags.map(h => `<span class="hashtag">#${h}</span>`).join('')}
+                    </div>
+                    <div class="text-xs text-gray-500 mb-4">
+                        Manbalar: ${article.sources.join(', ')}
+                    </div>
+                    <div class="flex items-center space-x-4 text-sm">
+                        <button class="like-btn flex items-center space-x-1 ${article.likes.some(l => l._id === currentDevice) ? 'text-red-500' : 'hover:text-red-400'}" data-id="${article._id}">
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+                            <span>${article.likes.length}</span>
+                        </button>
+                        <button class="comment-btn flex items-center space-x-1 hover:text-blue-400" data-id="${article._id}">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            <span>${article.comments.length}</span>
+                        </button>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700 hidden comment-section">
+                        <form class="add-comment flex gap-2" data-id="${article._id}">
+                            <input type="text" placeholder="Komment yozing..." class="glass-input flex-1 p-2 rounded" required>
+                            <button type="submit" class="twitter-blue text-white px-4 py-2 rounded">Yuborish</button>
+                        </form>
+                        <div class="comments-list mt-4 space-y-2">
+                            ${article.comments.map(c => `
+                                <div class="p-3 bg-gray-800 rounded">
+                                    <p>${c.content}</p>
+                                    <p class="text-xs text-gray-500">Qurilma ID: ${c.deviceId.deviceId.substring(0, 8)}...</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(element);
+            });
+
+            // Event listeners
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    const response = await fetch(`/api/news/${id}/like`, {
+                        method: 'POST',
+                        headers: { 'device-id': deviceId }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        btn.querySelector('span').textContent = data.likes;
+                        btn.classList.toggle('text-red-500');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const section = btn.closest('.glass-card').querySelector('.comment-section');
+                    section.classList.toggle('hidden');
+                });
+            });
+
+            document.querySelectorAll('.add-comment').forEach(form => {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const id = form.dataset.id;
+                    const content = form.querySelector('input').value;
+                    const response = await fetch(`/api/news/${id}/comment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'device-id': deviceId },
+                        body: JSON.stringify({ content, deviceId })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        form.querySelector('input').value = '';
+                        // Reload comments or add dynamically
+                        loadNews(true); // Soddalik uchun reload
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

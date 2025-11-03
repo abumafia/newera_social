@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewEra - Jurnalist Post Editor</title>
+    <meta property="og:title" content="NewEra - Jurnalist Post Editor">
+    <meta property="og:description" content="Jurnalistlar uchun yangiliklar yaratish va tahrirlash">
+    <meta property="og:image" content="./uploads/icon.png">
+    <meta property="og:url" content="https://newera.com/news-editor">
+    <meta property="og:site_name" content="NewEra">
+    <meta property="og:type" content="website">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#141414',
+                            300: '#0f0f0f',
+                            400: '#0a0a0a',
+                            500: '#050505',
+                        },
+                        glass: {
+                            light: 'rgba(255, 255, 255, 0.1)',
+                            dark: 'rgba(0, 0, 0, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-input {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .glass-input:focus {
+            background: rgba(40, 40, 40, 0.7);
+            border-color: rgba(29, 161, 242, 0.6);
+            box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+        }
+        
+        .glass-button {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .glass-button:hover {
+            background: rgba(50, 50, 50, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.6);
+        }
+        
+        .twitter-blue {
+            background-color: #1DA1F2;
+        }
+        
+        .twitter-blue:hover {
+            background-color: #1a91da;
+        }
+        
+        .media-preview {
+            position: relative;
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .remove-media {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .create-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .create-modal-content {
+            background: rgba(15, 15, 15, 0.95);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 640px) {
+            .create-modal-content {
+                margin: 10% auto;
+                width: 95%;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <div class="text-xl font-bold">
+                    <a href="/news" class="flex items-center">
+                        <img src="./uploads/icon.png" alt="NewEra Logo" class="h-8 mr-2 filter brightness-125">
+                        <span class="hidden sm:inline">NewEra Jurnalist</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="/news" class="twitter-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors">Yangiliklar</a>
+                    <button id="createNewsBtn" class="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors">Yangi Yangilik</button>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Asosiy kontent: Jurnalist maqolalari ro'yxati -->
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-24">
+        <h1 class="text-2xl font-bold mb-6">Sizning Maqolalaringiz</h1>
+        <div id="articlesContainer" class="space-y-4">
+            <!-- Maqolalar JS orqali yuklanadi -->
+        </div>
+    </div>
+
+    <!-- Yangi yangilik yaratish modali -->
+    <div id="createModal" class="create-modal">
+        <div class="create-modal-content">
+            <h2 class="text-xl font-bold mb-4">Yangi Yangilik Yaratish</h2>
+            <form id="newsForm" enctype="multipart/form-data">
+                <input type="text" id="title" placeholder="Yangilik mavzusi (sarlavha)" class="glass-input w-full p-3 rounded-xl mb-4" required maxlength="200">
+                
+                <textarea id="description" placeholder="Yangilik haqida batafsil..." class="glass-input w-full p-3 rounded-xl h-40 resize-none mb-4" required maxlength="5000"></textarea>
+                
+                <div class="mb-4">
+                    <input type="file" id="imageFile" accept="image/*" class="glass-input w-full p-3 rounded-xl hidden">
+                    <label for="imageFile" class="glass-button w-full text-center py-3 rounded-xl cursor-pointer block">📎 Rasm yuklash</label>
+                    <div id="imagePreview" class="mt-2"></div>
+                </div>
+                
+                <input type="url" id="video" placeholder="YouTube video linki (masalan: https://www.youtube.com/watch?v=...)" class="glass-input w-full p-3 rounded-xl mb-4">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Kategoriya</label>
+                    <input type="text" id="category" placeholder="Kategoriya kiriting (yangi yaratish uchun)" class="glass-input w-full p-3 rounded-xl mb-2">
+                    <small class="text-gray-400">Mavjud kategoriyalar: Sport, Texnologiya, Siyosat va boshqalar. Yangi kategoriya avtomatik yaratiladi.</small>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Hashtaglar (vergul bilan ajratib)</label>
+                    <input type="text" id="hashtags" placeholder="#hashtag1, #hashtag2" class="glass-input w-full p-3 rounded-xl">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Manbalar (vergul bilan ajratib)</label>
+                    <textarea id="sources" placeholder="Manba 1, Manba 2" class="glass-input w-full p-3 rounded-xl h-20 resize-none"></textarea>
+                </div>
+                
+                <div id="newsPreview" class="preview-post glass-card p-4 rounded-xl mt-4 hidden">
+                    <h3 id="previewTitle" class="font-bold mb-2"></h3>
+                    <p id="previewDescription"></p>
+                    <div id="previewImage"></div>
+                    <div id="previewVideo"></div>
+                    <div class="mt-2">
+                        <span>Kategoriya: <span id="previewCategory"></span></span>
+                        <div id="previewHashtags" class="flex flex-wrap mt-1"></div>
+                        <div id="previewSources" class="text-xs text-gray-500 mt-1"></div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="twitter-blue text-white w-full py-3 rounded-xl mt-4 hover:bg-blue-600 transition-colors font-medium">Yangilikni Joylash</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let journalistId = null;
+        let isLoading = false;
+
+        // Jurnalist session tekshirish
+        async function checkJournalistSession() {
+            try {
+                // Bu yerda /api/journalist/me endpoint kerak bo'lishi mumkin, lekin hozircha assume qilamiz
+                // Realda serverda /api/journalist/me route qo'shing
+                const response = await fetch('/api/journalist/me', { credentials: 'include' });
+                if (response.status === 401) {
+                    window.location.href = '/journalist-login.html';
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    journalistId = data.journalist._id;
+                    loadArticles();
+                }
+            } catch (error) {
+                console.error('Session tekshirishda xatolik:', error);
+                window.location.href = '/journalist-login.html';
+            }
+        }
+
+        // Maqolalarni yuklash (faqat jurnalistning)
+        async function loadArticles() {
+            try {
+                const response = await fetch(`/api/news/journalist/${journalistId}`);
+                const data = await response.json();
+                if (data.success) {
+                    renderArticles(data.articles);
+                }
+            } catch (error) {
+                console.error('Maqolalarni yuklashda xatolik:', error);
+            }
+        }
+
+        function renderArticles(articles) {
+            const container = document.getElementById('articlesContainer');
+            container.innerHTML = articles.map(article => `
+                <div class="glass-card p-4 rounded-xl">
+                    <h3 class="font-bold">${article.title}</h3>
+                    <p class="text-gray-300">${article.description.substring(0, 100)}...</p>
+                    <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                        <span>Kategoriya: ${article.category}</span>
+                        <span>Ko'rishlar: ${article.views.length}</span>
+                    </div>
+                    <div class="flex space-x-2 mt-2">
+                        <button class="glass-button px-3 py-1 rounded text-xs" onclick="editArticle('${article._id}')">Tahrirlash</button>
+                        <button class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">O'chirish</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Modal setup
+        document.addEventListener('DOMContentLoaded', () => {
+            checkJournalistSession();
+
+            const createBtn = document.getElementById('createNewsBtn');
+            const modal = document.getElementById('createModal');
+            const form = document.getElementById('newsForm');
+            const title = document.getElementById('title');
+            const description = document.getElementById('description');
+            const imageFile = document.getElementById('imageFile');
+            const imagePreview = document.getElementById('imagePreview');
+            const video = document.getElementById('video');
+            const category = document.getElementById('category');
+            const hashtags = document.getElementById('hashtags');
+            const sources = document.getElementById('sources');
+            const preview = document.getElementById('newsPreview');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            createBtn.addEventListener('click', () => modal.style.display = 'block');
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+            // Image preview
+            imageFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    imagePreview.innerHTML = `<div class="media-preview"><img src="${url}" class="w-full h-auto"><button type="button" class="remove-media" onclick="removeImage()">×</button></div>`;
+                    updatePreview();
+                }
+            });
+
+            window.removeImage = () => {
+                imagePreview.innerHTML = '';
+                imageFile.value = '';
+                updatePreview();
+            };
+
+            // Input listeners for preview
+            [title, description, video, category, hashtags, sources].forEach(input => {
+                input.addEventListener('input', updatePreview);
+            });
+
+            function updatePreview() {
+                document.getElementById('previewTitle').textContent = title.value || 'Sarlavha...';
+                document.getElementById('previewDescription').textContent = description.value || 'Tavsif...';
+                document.getElementById('previewImage').innerHTML = imagePreview.innerHTML;
+                
+                if (video.value) {
+                    const videoId = video.value.split('v=')[1]?.split('&')[0];
+                    document.getElementById('previewVideo').innerHTML = `<div class="youtube-iframe"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                } else {
+                    document.getElementById('previewVideo').innerHTML = '';
+                }
+                
+                document.getElementById('previewCategory').textContent = category.value || 'Kategoriya...';
+                
+                const tags = hashtags.value.split(',').map(t => t.trim()).filter(t => t);
+                document.getElementById('previewHashtags').innerHTML = tags.map(t => `<span class="hashtag">${t}</span>`).join('');
+                
+                document.getElementById('previewSources').textContent = sources.value || 'Manbalar...';
+                
+                preview.classList.remove('hidden');
+            }
+
+            // Form submit
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('title', title.value);
+                formData.append('description', description.value);
+                if (imageFile.files[0]) formData.append('image', imageFile.files[0]);
+                formData.append('video', video.value);
+                formData.append('category', category.value);
+                formData.append('hashtags', hashtags.value);
+                formData.append('sources', sources.value);
+
+                try {
+                    const response = await fetch('/api/news', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        modal.style.display = 'none';
+                        form.reset();
+                        imagePreview.innerHTML = '';
+                        preview.classList.add('hidden');
+                        showMessage('Yangilik muvaffaqiyatli joylandi!', 'success');
+                        loadArticles(); // Reload list
+                    } else {
+                        showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                    }
+                } catch (error) {
+                    console.error('Yangilik joylashda xatolik:', error);
+                    showMessage('Xatolik yuz berdi', 'error');
+                }
+            });
+
+            // Logout
+            logoutBtn.addEventListener('click', async () => {
+                await fetch('/api/journalist/logout', { method: 'POST' });
+                window.location.href = '/journalist-login.html';
+            });
+        });
+
+        function showMessage(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Tahrirlash funksiyasi (placeholder, realda modal ochib form to'ldirish)
+        window.editArticle = (id) => {
+            showMessage('Tahrirlash funksiyasi qo\'shilmoqda...', 'info');
+            // Realda article yuklab form to'ldirish
+        };
+    </script>
+</body>
+</html>
