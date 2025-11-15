@@ -1100,6 +1100,31 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
   }
 });
 
+// Yangi: Wallet integration - Add balance from wallet
+app.post('/api/user/:username/add-balance', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== 'Bearer wallet-api-key') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { amount, fromWalletUser } = req.body;
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.balance += amount; // NewEra balansiga H-coin qo'shish
+    await user.save();
+    console.log(`Added ${amount} H-Coin to ${req.params.username} from wallet ${fromWalletUser.walletNumber}`);
+    res.json({ 
+      success: true, 
+      newBalance: user.balance, 
+      from: fromWalletUser 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add balance' });
+  }
+});
+
 // Postlarni olish (boostlanganlarni yuqorida ko'rsatish, rejalashtirilganlarni ham)
 app.get('/posts', requireLogin, async (req, res) => {
   try {
