@@ -8,6 +8,7 @@ const path = require('path');
 const MongoStore = require('connect-mongo');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 const liveStreams = new Map(); // Real-time storage for active streams
 const liveStreamComments = new Map(); // Store comments for each stream
 const liveStreamLikes = new Map(); // Store likes for each stream
@@ -17,18 +18,15 @@ const liveStreamGifts = new Map(); // Store gifts for each stream
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Cloudinary sozlamalari (Render da environment variables qo'shing: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
+// Cloudinary sozlamalari
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// MongoDB ulanish
-mongoose.connect('mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+// MongoDB ulanish (environment variables ishlatish)
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority');
 
 // Modellar
 const UserSchema = new mongoose.Schema({
@@ -164,8 +162,6 @@ const LiveStreamSchema = new mongoose.Schema({
   earnings: { type: Number, default: 0 }
 });
 
-const LiveStream = mongoose.model('LiveStream', LiveStreamSchema);
-
 // Gift Schema for live streams
 const GiftSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -173,8 +169,41 @@ const GiftSchema = new mongoose.Schema({
   image: { type: String, required: true } // Cloudinary URL
 });
 
-const Gift = mongoose.model('Gift', GiftSchema);
+// News Schema (Google News standartlariga mos)
+const NewsSchema = new mongoose.Schema({
+  journalistId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Jurnalist (User modelidan)
+  title: { type: String, required: true, maxlength: 200 }, // SEO uchun qisqa sarlavha
+  description: { type: String, required: true, maxlength: 5000 }, // Batafsil tavsif
+  image: { type: String, default: '' }, // Cloudinary URL (og:image uchun)
+  video: { type: String, default: '' }, // YouTube link (embed uchun)
+  category: { type: String, required: true }, // Filtrlash uchun
+  hashtags: [{ type: String }], // SEO va discoverability
+  sources: [{ type: String, required: true }], // Google News uchun muhim: ishonchli manbalar
+  views: [{ type: String }], // Device ID'lar (anonim ko'rishlar)
+  likes: [{ type: String }], // Device ID'lar (anonim likes)
+  comments: [{
+    deviceId: { type: String, required: true },
+    content: { type: String, required: true, maxlength: 500 },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  featured: { type: Boolean, default: false }, // Featured stories
+  relatedArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'News' }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 
+NewsSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Newsletter Schema (qo'shildi)
+const NewsletterSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  subscribedAt: { type: Date, default: Date.now }
+});
+
+// Model'larni yaratish
 const User = mongoose.model('User', UserSchema);
 const Post = mongoose.model('Post', PostSchema);
 const Message = mongoose.model('Message', MessageSchema);
@@ -182,6 +211,10 @@ const Subscription = mongoose.model('Subscription', SubscriptionSchema);
 const PaymentRequest = mongoose.model('PaymentRequest', PaymentRequestSchema);
 const Withdrawal = mongoose.model('Withdrawal', WithdrawalSchema);
 const Story = mongoose.model('Story', StorySchema);
+const LiveStream = mongoose.model('LiveStream', LiveStreamSchema);
+const Gift = mongoose.model('Gift', GiftSchema);
+const News = mongoose.model('News', NewsSchema);
+const Newsletter = mongoose.model('Newsletter', NewsletterSchema);
 
 // Cloudinary storage
 const cloudinaryStorage = new CloudinaryStorage({
@@ -228,19 +261,20 @@ const uploadProfile = multer({
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(session({
-  secret: 'social-network-secret-key-' + Math.random().toString(36).substring(2),
+  secret: process.env.SESSION_SECRET || 'social-network-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 1 kun
-    store: MongoStore.create({
-      mongoUrl: 'mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority',
-      ttl: 24 * 60 * 60 // 1 kun
-    })
-  }
+  },
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority',
+    ttl: 24 * 60 * 60 // 1 kun
+  })
 }));
 
 // Auth middleware
@@ -262,20 +296,22 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-// Monetizatsiya middleware: Premium tekshirish
-const requirePremium = (req, res, next) => {
-  User.findById(req.session.userId, (err, user) => {
-    if (err || !user || !user.isPremium || (user.premiumExpiresAt && user.premiumExpiresAt < new Date())) {
+// Monetizatsiya middleware: Premium tekshirish (async qilindi)
+const requirePremium = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user || !user.isPremium || (user.premiumExpiresAt && user.premiumExpiresAt < new Date())) {
       return res.status(403).json({ success: false, message: "Premium obuna kerak" });
     }
     next();
-  });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 // Monetizatsiya hisoblash funksiyasi
 async function calcPayouts(post) {
   const user = await User.findById(post.userId);
-
   // Likes
   const likeGroups = Math.floor(post.likes.length / 100);
   const earnedLikes = likeGroups - post.payouts.likes;
@@ -283,7 +319,6 @@ async function calcPayouts(post) {
     user.balance += earnedLikes * 1; // $1 per 100 likes
     post.payouts.likes = likeGroups;
   }
-
   // Comments (top-level)
   const commentGroups = Math.floor(post.comments.length / 100);
   const earnedComments = commentGroups - post.payouts.comments;
@@ -291,7 +326,6 @@ async function calcPayouts(post) {
     user.balance += earnedComments * 1; // $1 per 100 comments
     post.payouts.comments = commentGroups;
   }
-
   // Shares
   const shareGroups = Math.floor(post.shares.length / 100);
   const earnedShares = shareGroups - post.payouts.shares;
@@ -299,25 +333,272 @@ async function calcPayouts(post) {
     user.balance += earnedShares * 2; // $2 per 100 shares
     post.payouts.shares = shareGroups;
   }
-
   await user.save();
   await post.save();
 }
 
-// Routes
+// News routes (birlashtirilgan va expanded)
+app.get('/api/news', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const deviceId = req.headers['device-id'];
+    let query = {};
+    if (req.query.category && req.query.category !== 'all') {
+      query.category = req.query.category;
+    }
+    if (req.query.featured) {
+      query.featured = true;
+    }
+    const articles = await News.find(query)
+      .populate('journalistId', 'fullName bio email profilePic')
+      .populate('relatedArticles', 'title description image')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    if (deviceId) {
+      articles.forEach(article => {
+        if (!article.views.includes(deviceId)) {
+          article.views.push(deviceId);
+        }
+      });
+      await News.bulkSave(articles);
+    }
+    // Auto-suggest related articles
+    for (const article of articles) {
+      if (!article.relatedArticles || article.relatedArticles.length === 0) {
+        const related = await News.find({
+          category: article.category,
+          _id: { $ne: article._id }
+        }).limit(3).select('title description image');
+        article.relatedArticles = related;
+        await article.save();
+      }
+    }
+    res.json({ success: true, articles });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
-// Create a new live stream
+app.get('/api/news/:id', async (req, res) => {
+  try {
+    const deviceId = req.headers['device-id'];
+    const article = await News.findById(req.params.id)
+      .populate('journalistId', 'fullName bio email profilePic')
+      .populate('relatedArticles', 'title description image category');
+    if (!article) return res.status(404).json({ success: false, message: "Yangilik topilmadi" });
+    if (deviceId && !article.views.includes(deviceId)) {
+      article.views.push(deviceId);
+      await article.save();
+    }
+    res.json({ success: true, article });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/news', requireLogin, uploadMedia.single('image'), async (req, res) => {
+  try {
+    const { title, description, video, category, hashtags, sources } = req.body;
+    if (!title || !description || !category || !sources) {
+      return res.status(400).json({ success: false, message: "Asosiy maydonlar to'ldirilishi kerak" });
+    }
+    const newNews = new News({
+      journalistId: req.session.userId,
+      title,
+      description,
+      image: req.file ? req.file.path : '',
+      video: video || '',
+      category,
+      hashtags: hashtags ? hashtags.split(',').map(h => h.trim().replace(/^#/, '')) : [],
+      sources: sources.split(',').map(s => s.trim())
+    });
+    await newNews.save();
+    await newNews.populate('journalistId', 'fullName bio email profilePic');
+    res.json({ success: true, article: newNews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/news/journalist/:id', requireLogin, async (req, res) => {
+  try {
+    if (req.params.id !== req.session.userId.toString()) {
+      return res.status(403).json({ success: false, message: "Ruxsat yo'q" });
+    }
+    const articles = await News.find({ journalistId: req.params.id })
+      .populate('journalistId', 'fullName')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, articles });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/news/:id/like', async (req, res) => {
+  try {
+    const deviceId = req.headers['device-id'];
+    if (!deviceId) return res.status(400).json({ success: false, message: "Device ID kerak" });
+    const article = await News.findById(req.params.id);
+    if (!article) return res.status(404).json({ success: false, message: "Yangilik topilmadi" });
+    const likeIndex = article.likes.indexOf(deviceId);
+    if (likeIndex > -1) {
+      article.likes.splice(likeIndex, 1);
+    } else {
+      article.likes.push(deviceId);
+    }
+    await article.save();
+    res.json({ success: true, likes: article.likes.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/news/:id/comment', async (req, res) => {
+  try {
+    const { content } = req.body;
+    const deviceId = req.headers['device-id'];
+    if (!content || !deviceId) return res.status(400).json({ success: false, message: "Kontent va Device ID kerak" });
+    const article = await News.findById(req.params.id);
+    if (!article) return res.status(404).json({ success: false, message: "Yangilik topilmadi" });
+    article.comments.push({ deviceId, content });
+    await article.save();
+    res.json({ success: true, comments: article.comments.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.put('/api/news/:id', requireLogin, uploadMedia.single('image'), async (req, res) => {
+  try {
+    const { title, description, video, category, hashtags, sources } = req.body;
+    const article = await News.findOne({ _id: req.params.id, journalistId: req.session.userId });
+    if (!article) return res.status(404).json({ success: false, message: "Yangilik topilmadi yoki ruxsat yo'q" });
+    article.title = title || article.title;
+    article.description = description || article.description;
+    if (req.file) article.image = req.file.path;
+    article.video = video || article.video;
+    article.category = category || article.category;
+    article.hashtags = hashtags ? hashtags.split(',').map(h => h.trim().replace(/^#/, '')) : article.hashtags;
+    article.sources = sources ? sources.split(',').map(s => s.trim()) : article.sources;
+    await article.save();
+    await article.populate('journalistId', 'fullName bio email profilePic');
+    res.json({ success: true, article });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/news/:id', requireLogin, async (req, res) => {
+  try {
+    const article = await News.findOneAndDelete({ _id: req.params.id, journalistId: req.session.userId });
+    if (!article) return res.status(404).json({ success: false, message: "Yangilik topilmadi yoki ruxsat yo'q" });
+    if (article.image) {
+      const publicId = cloudinary.utils.extractPublicId(article.image);
+      if (publicId) await cloudinary.uploader.destroy(publicId);
+    }
+    res.json({ success: true, message: "Yangilik o'chirildi" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/search', async (req, res) => {
+  try {
+    const { q, type = 'all', page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    let query = {};
+    if (q) {
+      if (type === 'title') {
+        query.title = { $regex: q, $options: 'i' };
+      } else if (type === 'hashtag') {
+        query.hashtags = { $in: [new RegExp(q.replace('#', ''), 'i')] };
+      } else if (type === 'author') {
+        query['journalistId.fullName'] = { $regex: q, $options: 'i' };
+      } else {
+        query.$or = [
+          { title: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { hashtags: { $in: [new RegExp(q.replace('#', ''), 'i')] } },
+          { 'journalistId.fullName': { $regex: q, $options: 'i' } }
+        ];
+      }
+    }
+    const articles = await News.find(query)
+      .populate('journalistId', 'fullName')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    res.json({ success: true, articles, total: await News.countDocuments(query) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const categories = await News.distinct('category');
+    res.json({ success: true, categories: [...new Set(categories)].sort() });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Newsletter subscription
+app.post('/api/newsletter', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email kerak" });
+    const existing = await Newsletter.findOne({ email });
+    if (existing) return res.status(400).json({ success: false, message: "Alla qachon obuna bo'lgansiz" });
+    const newSub = new Newsletter({ email });
+    await newSub.save();
+    // Realda email yuborish (nodemailer bilan)
+    res.json({ success: true, message: "Obuna bo'ldingiz!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// RSS feed (simple)
+app.get('/rss.xml', async (req, res) => {
+  try {
+    const articles = await News.find().sort({ createdAt: -1 }).limit(20).populate('journalistId', 'fullName');
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>NewEra News</title>
+<link>${process.env.BASE_URL || 'https://newera.com'}/news</link>
+<description>Yangiliklar</description>
+${articles.map(a => `
+<item>
+<title>${a.title}</title>
+<link>${process.env.BASE_URL || 'https://newera.com'}/news/${a._id}</link>
+<description>${a.description.substring(0, 200)}</description>
+<pubDate>${a.createdAt.toUTCString()}</pubDate>
+<author>${a.journalistId.fullName}</author>
+</item>
+`).join('')}
+</channel>
+</rss>`;
+    res.type('application/rss+xml');
+    res.send(rss);
+  } catch (error) {
+    res.status(500).send('RSS xatosi');
+  }
+});
+
+// Live stream routes
 app.post('/api/live/start', requireLogin, uploadProfile.single('thumbnail'), async (req, res) => {
   try {
     const { title, description } = req.body;
-    
     if (!title) {
       return res.status(400).json({ success: false, message: "Stream nomi kerak" });
     }
-
     // Generate unique stream key
     const streamKey = `live_${req.session.userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     const newStream = new LiveStream({
       userId: req.session.userId,
       title,
@@ -327,10 +608,8 @@ app.post('/api/live/start', requireLogin, uploadProfile.single('thumbnail'), asy
       isActive: true,
       startedAt: new Date()
     });
-
     await newStream.save();
     await newStream.populate('userId', 'username fullName profilePic');
-
     // Initialize real-time data
     liveStreams.set(streamKey, {
       streamId: newStream._id,
@@ -340,71 +619,59 @@ app.post('/api/live/start', requireLogin, uploadProfile.single('thumbnail'), asy
       isActive: true,
       startedAt: new Date()
     });
-    
     liveStreamComments.set(streamKey, []);
     liveStreamLikes.set(streamKey, new Set());
     liveStreamViewers.set(streamKey, new Set());
     liveStreamGifts.set(streamKey, []);
-
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       stream: newStream,
-      streamKey 
+      streamKey
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// End a live stream
 app.post('/api/live/end', requireLogin, async (req, res) => {
   try {
     const { streamKey } = req.body;
-    
-    const stream = await LiveStream.findOne({ 
-      streamKey, 
-      userId: req.session.userId 
+    const stream = await LiveStream.findOne({
+      streamKey,
+      userId: req.session.userId
     });
-    
     if (!stream) {
       return res.status(404).json({ success: false, message: "Stream topilmadi" });
     }
-
     stream.isActive = false;
     stream.endedAt = new Date();
     stream.viewersCount = liveStreamViewers.get(streamKey)?.size || 0;
     stream.totalLikes = liveStreamLikes.get(streamKey)?.size || 0;
-    
     // Calculate total gifts value and earnings
     const gifts = liveStreamGifts.get(streamKey) || [];
-    const totalGiftsValue = gifts.reduce((sum, gift) => sum + gift.gift.price, 0);
+    const totalGiftsValue = gifts.reduce((sum, gift) => sum + (gift.gift ? gift.gift.price : 0), 0);
     stream.totalGifts = gifts.length;
     stream.earnings = totalGiftsValue; // Total coins earned
-
     await stream.save();
-
     // Cleanup real-time data
     liveStreams.delete(streamKey);
     liveStreamComments.delete(streamKey);
     liveStreamLikes.delete(streamKey);
     liveStreamViewers.delete(streamKey);
     liveStreamGifts.delete(streamKey);
-
     res.json({ success: true, message: "Stream muvaffaqiyatli tugatildi", stream });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Get all active live streams
 app.get('/api/live/streams', requireLogin, async (req, res) => {
   try {
-    const activeStreams = await LiveStream.find({ 
-      isActive: true 
+    const activeStreams = await LiveStream.find({
+      isActive: true
     })
     .populate('userId', 'username fullName profilePic')
     .sort({ startedAt: -1 });
-
     // Add real-time viewer counts
     const streamsWithViewers = activeStreams.map(stream => {
       const viewers = liveStreamViewers.get(stream.streamKey);
@@ -414,35 +681,29 @@ app.get('/api/live/streams', requireLogin, async (req, res) => {
         totalLikes: liveStreamLikes.get(stream.streamKey)?.size || 0
       };
     });
-
     res.json({ success: true, streams: streamsWithViewers });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Join a live stream as viewer
 app.post('/api/live/join', requireLogin, async (req, res) => {
   try {
     const { streamKey } = req.body;
-    
     const stream = await LiveStream.findOne({ streamKey, isActive: true }).populate('userId', 'username fullName profilePic');
     if (!stream) {
       return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
     }
-
     // Add user to viewers
     if (!liveStreamViewers.has(streamKey)) {
       liveStreamViewers.set(streamKey, new Set());
     }
     liveStreamViewers.get(streamKey).add(req.session.userId);
-
     const comments = liveStreamComments.get(streamKey) || [];
     const likesCount = liveStreamLikes.get(streamKey)?.size || 0;
     const gifts = liveStreamGifts.get(streamKey) || [];
-
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       stream: {
         ...stream.toObject(),
         currentViewers: liveStreamViewers.get(streamKey).size,
@@ -456,37 +717,29 @@ app.post('/api/live/join', requireLogin, async (req, res) => {
   }
 });
 
-// Leave a live stream
 app.post('/api/live/leave', requireLogin, async (req, res) => {
   try {
     const { streamKey } = req.body;
-    
     if (liveStreamViewers.has(streamKey)) {
       liveStreamViewers.get(streamKey).delete(req.session.userId);
     }
-
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Send comment to live stream
 app.post('/api/live/comment', requireLogin, async (req, res) => {
   try {
     const { streamKey, content } = req.body;
-    
     if (!content || !streamKey) {
       return res.status(400).json({ success: false, message: "Comment va stream key kerak" });
     }
-
     const stream = await LiveStream.findOne({ streamKey, isActive: true });
     if (!stream) {
       return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
     }
-
     const user = await User.findById(req.session.userId).select('username fullName profilePic');
-    
     const comment = {
       id: Date.now().toString(),
       userId: req.session.userId,
@@ -498,52 +751,42 @@ app.post('/api/live/comment', requireLogin, async (req, res) => {
       content,
       timestamp: new Date()
     };
-
     if (!liveStreamComments.has(streamKey)) {
       liveStreamComments.set(streamKey, []);
     }
-    
     liveStreamComments.get(streamKey).push(comment);
-
     // Keep only last 1000 comments to prevent memory issues
     const comments = liveStreamComments.get(streamKey);
     if (comments.length > 1000) {
       liveStreamComments.set(streamKey, comments.slice(-1000));
     }
-
     res.json({ success: true, comment });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Like a live stream
 app.post('/api/live/like', requireLogin, async (req, res) => {
   try {
     const { streamKey } = req.body;
-    
     const stream = await LiveStream.findOne({ streamKey, isActive: true });
     if (!stream) {
       return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
     }
-
     if (!liveStreamLikes.has(streamKey)) {
       liveStreamLikes.set(streamKey, new Set());
     }
-
     const likes = liveStreamLikes.get(streamKey);
     likes.add(req.session.userId);
-
-    res.json({ 
-      success: true, 
-      likesCount: likes.size 
+    res.json({
+      success: true,
+      likesCount: likes.size
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Get available gifts
 app.get('/api/live/gifts', requireLogin, async (req, res) => {
   try {
     // Sample gifts - in real app, you'd store these in database
@@ -555,23 +798,19 @@ app.get('/api/live/gifts', requireLogin, async (req, res) => {
       { id: 5, name: 'Rocket', price: 500, image: '🚀' },
       { id: 6, name: 'Super Star', price: 1000, image: '⭐' }
     ];
-
     res.json({ success: true, gifts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Send gift to live stream
 app.post('/api/live/gift', requireLogin, async (req, res) => {
   try {
     const { streamKey, giftId } = req.body;
-    
     const stream = await LiveStream.findOne({ streamKey, isActive: true }).populate('userId', 'username fullName profilePic');
     if (!stream) {
       return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
     }
-
     // Get gift details
     const gifts = [
       { id: 1, name: 'Rose', price: 10, image: '🌹' },
@@ -581,32 +820,26 @@ app.post('/api/live/gift', requireLogin, async (req, res) => {
       { id: 5, name: 'Rocket', price: 500, image: '🚀' },
       { id: 6, name: 'Super Star', price: 1000, image: '⭐' }
     ];
-
     const gift = gifts.find(g => g.id === parseInt(giftId));
     if (!gift) {
       return res.status(400).json({ success: false, message: "Gift topilmadi" });
     }
-
     // Check user coins
     const user = await User.findById(req.session.userId);
     if (user.coins < gift.price) {
       return res.status(400).json({ success: false, message: "Yetarli coin yo'q" });
     }
-
     // Deduct coins from sender
     user.coins -= gift.price;
     await user.save();
-
     // Add full coins to streamer
     const streamer = await User.findById(stream.userId._id);
     streamer.coins += gift.price;
     await streamer.save();
-
     // Add gift to stream
     if (!liveStreamGifts.has(streamKey)) {
       liveStreamGifts.set(streamKey, []);
     }
-
     const giftData = {
       id: Date.now().toString(),
       userId: req.session.userId,
@@ -618,17 +851,14 @@ app.post('/api/live/gift', requireLogin, async (req, res) => {
       gift: gift,
       timestamp: new Date()
     };
-
     liveStreamGifts.get(streamKey).push(giftData);
-
     // Keep only last 500 gifts
     const streamGifts = liveStreamGifts.get(streamKey);
     if (streamGifts.length > 500) {
       liveStreamGifts.set(streamKey, streamGifts.slice(-500));
     }
-
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       gift: giftData,
       remainingCoins: user.coins
     });
@@ -637,27 +867,22 @@ app.post('/api/live/gift', requireLogin, async (req, res) => {
   }
 });
 
-// Get live stream updates (for real-time updates)
 app.get('/api/live/updates/:streamKey', requireLogin, async (req, res) => {
   try {
     const { streamKey } = req.params;
     const lastUpdateTime = req.query.lastUpdateTime ? new Date(parseInt(req.query.lastUpdateTime)) : new Date(0);
-    
     const stream = await LiveStream.findOne({ streamKey, isActive: true });
     if (!stream) {
       return res.status(404).json({ success: false, message: "Aktiv stream topilmadi" });
     }
-
     const comments = liveStreamComments.get(streamKey) || [];
     const likesCount = liveStreamLikes.get(streamKey)?.size || 0;
     const viewersCount = liveStreamViewers.get(streamKey)?.size || 0;
     const gifts = liveStreamGifts.get(streamKey) || [];
     const giftsCount = gifts.length;
-
     // Filter new items based on timestamp to avoid duplicates
     const newComments = comments.filter(c => c.timestamp > lastUpdateTime);
     const newGifts = gifts.filter(g => g.timestamp > lastUpdateTime);
-
     res.json({
       success: true,
       updates: {
@@ -674,16 +899,14 @@ app.get('/api/live/updates/:streamKey', requireLogin, async (req, res) => {
   }
 });
 
-// Get user's live stream history
 app.get('/api/live/history', requireLogin, async (req, res) => {
   try {
-    const streams = await LiveStream.find({ 
-      userId: req.session.userId 
+    const streams = await LiveStream.find({
+      userId: req.session.userId
     })
     .populate('userId', 'username fullName profilePic')
     .sort({ startedAt: -1 })
     .limit(20);
-
     res.json({ success: true, streams });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -718,11 +941,10 @@ app.get('/api/shorts', requireLogin, async (req, res) => {
         path: 'comments.replies.userId',
         select: 'username fullName profilePic'
       })
-      .sort({ 
+      .sort({
         boostLevel: -1,
-        createdAt: -1 
+        createdAt: -1
       });
-    
     res.json({ success: true, shorts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -733,15 +955,12 @@ app.get('/api/shorts', requireLogin, async (req, res) => {
 app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, res) => {
   try {
     const { title, description, boostLevel } = req.body;
-    
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Video fayl kerak" });
     }
-    
     if (!title || !description) {
       return res.status(400).json({ success: false, message: "Nomi va izoh kerak" });
     }
-    
     // Boost uchun balans tekshirish (balansdan yechish)
     let finalBoostLevel = 0;
     if (parseInt(boostLevel) > 0) {
@@ -754,7 +973,6 @@ app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, r
       await user.save();
       finalBoostLevel = parseInt(boostLevel);
     }
-    
     const newPost = new Post({
       userId: req.session.userId,
       title,
@@ -763,10 +981,8 @@ app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, r
       media: req.file.path, // Cloudinary URL
       boostLevel: finalBoostLevel
     });
-    
     await newPost.save();
     await newPost.populate('userId', 'username fullName profilePic');
-    
     res.json({ success: true, short: newPost });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -777,15 +993,12 @@ app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, r
 app.post('/register', async (req, res) => {
   try {
     const { username, password, email, fullName } = req.body;
-    
     // Validatsiya
     if (!username || !password || !email || !fullName) {
       return res.status(400).json({ success: false, message: "Barcha maydonlarni to'ldiring" });
     }
-    
     // Parolni hash qilish
     const hashedPassword = await bcrypt.hash(password, 12);
-    
     // Yangi foydalanuvchi yaratish
     const newUser = new User({
       username,
@@ -793,14 +1006,11 @@ app.post('/register', async (req, res) => {
       email,
       fullName
     });
-    
     await newUser.save();
-    
     // Sessionga saqlash
     req.session.userId = newUser._id;
     req.session.username = newUser.username;
     req.session.isAdmin = newUser.username === 'admin';
-    
     res.json({ success: true, message: "Ro'yxatdan muvaffaqiyatli o'tdingiz", userId: newUser._id });
   } catch (error) {
     if (error.code === 11000) {
@@ -814,29 +1024,24 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
     // Validatsiya
     if (!username || !password) {
       return res.status(400).json({ success: false, message: "Foydalanuvchi nomi va parolni kiriting" });
     }
-    
     // Foydalanuvchini topish
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ success: false, message: "Foydalanuvchi topilmadi" });
     }
-    
     // Parolni tekshirish
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Noto'g'ri parol" });
     }
-    
     // Sessionga saqlash
     req.session.userId = user._id;
     req.session.username = user.username;
     req.session.isAdmin = user.username === 'admin';
-    
     res.json({ success: true, message: "Muvaffaqiyatli kirdingiz", userId: user._id });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -860,17 +1065,13 @@ app.get('/user/me', requireLogin, async (req, res) => {
       .select('-password')
       .populate('followers', 'username fullName profilePic')
       .populate('following', 'username fullName profilePic');
-    
     if (!user) {
       return res.status(404).json({ success: false, message: "Foydalanuvchi topilmadi" });
     }
-    
     const posts = await Post.find({ userId: user._id });
     const totalLikes = posts.reduce((sum, post) => sum + post.likes.length, 0);
-    
     // Monetizatsiya statistikasi
     const earnings = posts.reduce((sum, post) => sum + (post.isSponsored ? post.sponsorPrice : 0), 0);
-    
     res.json({
       success: true,
       user: {
@@ -892,14 +1093,11 @@ app.get('/user/:id', requireLogin, async (req, res) => {
       .select('-password')
       .populate('followers', 'username fullName profilePic')
       .populate('following', 'username fullName profilePic');
-    
     if (!user) {
       return res.status(404).json({ success: false, message: "Foydalanuvchi topilmadi" });
     }
-    
     const posts = await Post.find({ userId: user._id });
     const totalLikes = posts.reduce((sum, post) => sum + post.likes.length, 0);
-    
     res.json({
       success: true,
       user: {
@@ -917,13 +1115,11 @@ app.get('/user/:id', requireLogin, async (req, res) => {
 app.put('/user', requireLogin, async (req, res) => {
   try {
     const { fullName, bio } = req.body;
-    
     const user = await User.findByIdAndUpdate(
       req.session.userId,
       { fullName, bio },
       { new: true, runValidators: true }
     ).select('-password');
-    
     res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -936,13 +1132,11 @@ app.post('/upload', requireLogin, uploadProfile.single('profilePic'), async (req
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Fayl yuklanmadi' });
     }
-    
     const user = await User.findByIdAndUpdate(
       req.session.userId,
       { profilePic: req.file.path }, // Cloudinary URL
       { new: true }
     ).select('-password');
-    
     res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -955,19 +1149,15 @@ app.post('/stories', requireLogin, uploadMedia.single('media'), async (req, res)
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Media fayl kerak' });
     }
-    
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 soat
-    
     const newStory = new Story({
       userId: req.session.userId,
       media: req.file.path, // Cloudinary URL
       caption: req.body.caption || '',
       expiresAt
     });
-    
     await newStory.save();
     await newStory.populate('userId', 'username fullName profilePic');
-    
     res.json({ success: true, story: newStory });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -979,14 +1169,12 @@ app.get('/stories', requireLogin, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     const followingIds = user.following;
-    
     const stories = await Story.find({
       userId: { $in: followingIds },
       expiresAt: { $gt: new Date() }
     })
     .populate('userId', 'username fullName profilePic')
     .sort({ createdAt: -1 });
-    
     res.json({ success: true, stories });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1031,7 +1219,6 @@ app.get('/messages/conversations', requireLogin, async (req, res) => {
       }},
       { $sort: { lastTime: -1 } }
     ]);
-    
     res.json({ success: true, conversations });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1041,15 +1228,12 @@ app.get('/messages/conversations', requireLogin, async (req, res) => {
 // Post yaratish (premium funksiyalar bilan)
 app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) => {
   try {
-    const { content, backgroundColor, textColor, pollQuestion, scheduledAt } = req.body;
-    
+    const { content, backgroundColor, textColor, pollQuestion, scheduledAt, title } = req.body;
     if (!content) {
       return res.status(400).json({ success: false, message: "Post matni bo'sh bo'lmasligi kerak" });
     }
-    
     const user = await User.findById(req.session.userId);
     const isPremium = user.isPremium && (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date());
-
     // Premium funksiyalarni tekshirish
     if (backgroundColor && !isPremium) {
       return res.status(403).json({ success: false, message: "Orqa fon rangi faqat premium uchun" });
@@ -1063,7 +1247,6 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
     if (scheduledAt && !isPremium) {
       return res.status(403).json({ success: false, message: "Rejalashtirish faqat premium uchun" });
     }
-
     // Poll variantlarini yig'ish
     let poll = null;
     if (pollQuestion && isPremium) {
@@ -1077,9 +1260,10 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
         poll = { question: pollQuestion, options, votes: [] };
       }
     }
-
     const newPost = new Post({
       userId: req.session.userId,
+      title: title || '',
+      description: title || '',
       content,
       media: req.file ? req.file.path : '', // Cloudinary URL
       backgroundColor: isPremium ? backgroundColor || '' : '',
@@ -1090,10 +1274,8 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
       sponsorPrice: 0,
       boostLevel: 0
     });
-    
     await newPost.save();
     await newPost.populate('userId', 'username fullName profilePic');
-    
     res.json({ success: true, post: newPost });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1103,7 +1285,7 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
 // Yangi: Wallet integration - Add balance from wallet
 app.post('/api/user/:username/add-balance', async (req, res) => {
   const authHeader = req.headers.authorization;
-  if (authHeader !== 'Bearer wallet-api-key') {
+  if (authHeader !== `Bearer ${process.env.WALLET_API_KEY}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
@@ -1115,10 +1297,10 @@ app.post('/api/user/:username/add-balance', async (req, res) => {
     user.balance += amount; // NewEra balansiga H-coin qo'shish
     await user.save();
     console.log(`Added ${amount} H-Coin to ${req.params.username} from wallet ${fromWalletUser.walletNumber}`);
-    res.json({ 
-      success: true, 
-      newBalance: user.balance, 
-      from: fromWalletUser 
+    res.json({
+      success: true,
+      newBalance: user.balance,
+      from: fromWalletUser
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add balance' });
@@ -1131,10 +1313,9 @@ app.get('/posts', requireLogin, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-    
     // Rejalashtirilgan postlarni ham qo'shish (faqat o'tgan vaqtdagilar)
     const now = new Date();
-    const posts = await Post.find({ 
+    const posts = await Post.find({
       $or: [
         { scheduledAt: null },
         { scheduledAt: { $lte: now } }
@@ -1149,13 +1330,12 @@ app.get('/posts', requireLogin, async (req, res) => {
         path: 'comments.replies.userId',
         select: 'username fullName profilePic'
       })
-      .sort({ 
+      .sort({
         boostLevel: -1, // Boost yuqori
-        createdAt: -1 
+        createdAt: -1
       })
       .skip(skip)
       .limit(limit);
-    
     res.json({ success: true, posts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1168,7 +1348,6 @@ app.get('/posts/user/:userId', requireLogin, async (req, res) => {
     const posts = await Post.find({ userId: req.params.userId })
       .populate('userId', 'username fullName profilePic')
       .sort({ createdAt: -1 });
-    
     res.json({ success: true, posts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1180,19 +1359,15 @@ app.post('/posts/:id/poll/vote', requireLogin, async (req, res) => {
   try {
     const { optionIndex } = req.body;
     const post = await Post.findById(req.params.id);
-    
     if (!post.poll || !post.poll.question) {
       return res.status(400).json({ success: false, message: "Poll topilmadi" });
     }
-    
     const existingVote = post.poll.votes.find(v => v.userId.toString() === req.session.userId);
     if (existingVote) {
       return res.status(400).json({ success: false, message: "Alla qachon ovoz berdingiz" });
     }
-    
     post.poll.votes.push({ optionIndex: parseInt(optionIndex), userId: req.session.userId });
     await post.save();
-    
     res.json({ success: true, votes: post.poll.votes });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1203,18 +1378,15 @@ app.post('/posts/:id/poll/vote', requireLogin, async (req, res) => {
 app.post('/posts/:id/like', requireLogin, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: "Post topilmadi" });
     }
-    
     const likeIndex = post.likes.indexOf(req.session.userId);
     if (likeIndex > -1) {
       post.likes.splice(likeIndex, 1);
     } else {
       post.likes.push(req.session.userId);
     }
-    
     await post.save();
     await calcPayouts(post);
     res.json({ success: true, likes: post.likes.length });
@@ -1227,16 +1399,13 @@ app.post('/posts/:id/like', requireLogin, async (req, res) => {
 app.post('/posts/:id/share', requireLogin, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: "Post topilmadi" });
     }
-    
     const shareIndex = post.shares.indexOf(req.session.userId);
     if (shareIndex === -1) {
       post.shares.push(req.session.userId);
     }
-    
     await post.save();
     await calcPayouts(post);
     res.json({ success: true, shares: post.shares.length });
@@ -1279,29 +1448,23 @@ app.post('/posts/:id/send-coin', requireLogin, async (req, res) => {
 app.post('/posts/:id/comment', requireLogin, async (req, res) => {
   try {
     const { content } = req.body;
-    
     if (!content) {
       return res.status(400).json({ success: false, message: "Komment matni bo'sh bo'lmasligi kerak" });
     }
-    
     const post = await Post.findById(req.params.id);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: "Post topilmadi" });
     }
-    
     post.comments.push({
       userId: req.session.userId,
       content
     });
-    
     await post.save();
     await post.populate({
       path: 'comments.userId',
       select: 'username fullName profilePic'
     });
     await calcPayouts(post);
-    
     const newComment = post.comments[post.comments.length - 1];
     res.json({ success: true, comment: newComment });
   } catch (error) {
@@ -1313,23 +1476,19 @@ app.post('/posts/:id/comment', requireLogin, async (req, res) => {
 app.post('/posts/:postId/comments/:commentId/like', requireLogin, async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: "Post topilmadi" });
     }
-    
     const comment = post.comments.id(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ success: false, message: "Komment topilmadi" });
     }
-    
     const likeIndex = comment.likes.indexOf(req.session.userId);
     if (likeIndex > -1) {
       comment.likes.splice(likeIndex, 1);
     } else {
       comment.likes.push(req.session.userId);
     }
-    
     await post.save();
     res.json({ success: true, likes: comment.likes.length });
   } catch (error) {
@@ -1341,33 +1500,26 @@ app.post('/posts/:postId/comments/:commentId/like', requireLogin, async (req, re
 app.post('/posts/:postId/comments/:commentId/reply', requireLogin, async (req, res) => {
   try {
     const { content } = req.body;
-    
     if (!content) {
       return res.status(400).json({ success: false, message: "Javob matni bo'sh bo'lmasligi kerak" });
     }
-    
     const post = await Post.findById(req.params.postId);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: "Post topilmadi" });
     }
-    
     const comment = post.comments.id(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ success: false, message: "Komment topilmadi" });
     }
-    
     comment.replies.push({
       userId: req.session.userId,
       content
     });
-    
     await post.save();
     await post.populate({
       path: 'comments.replies.userId',
       select: 'username fullName profilePic'
     });
-    
     const newReply = comment.replies[comment.replies.length - 1];
     res.json({ success: true, reply: newReply });
   } catch (error) {
@@ -1380,14 +1532,11 @@ app.post('/user/:id/follow', requireLogin, async (req, res) => {
   try {
     const userToFollow = await User.findById(req.params.id);
     const currentUser = await User.findById(req.session.userId);
-    
     if (!userToFollow || !currentUser) {
       return res.status(404).json({ success: false, message: "Foydalanuvchi topilmadi" });
     }
-    
     // Obuna bo'lish/obunani bekor qilish
     const isFollowing = currentUser.following.includes(userToFollow._id);
-    
     if (isFollowing) {
       // Obunani bekor qilish
       currentUser.following.pull(userToFollow._id);
@@ -1397,14 +1546,12 @@ app.post('/user/:id/follow', requireLogin, async (req, res) => {
       currentUser.following.push(userToFollow._id);
       userToFollow.followers.push(currentUser._id);
     }
-    
     await currentUser.save();
     await userToFollow.save();
-    
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       isFollowing: !isFollowing,
-      followers: userToFollow.followers.length 
+      followers: userToFollow.followers.length
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1423,7 +1570,6 @@ app.get('/messages/:userId', requireLogin, async (req, res) => {
     .populate('senderId', 'username fullName profilePic')
     .populate('receiverId', 'username fullName profilePic')
     .sort({ createdAt: 1 });
-    
     res.json({ success: true, messages });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1434,11 +1580,9 @@ app.get('/messages/:userId', requireLogin, async (req, res) => {
 app.post('/messages', requireLogin, async (req, res) => {
   try {
     const { receiverId, content, tipAmount } = req.body;
-    
     if (!content || !receiverId) {
       return res.status(400).json({ success: false, message: "Xabar matni va qabul qiluvchi kerak" });
     }
-    
     // Tip uchun balans tekshirish
     if (tipAmount > 0) {
       const sender = await User.findById(req.session.userId);
@@ -1451,7 +1595,6 @@ app.post('/messages', requireLogin, async (req, res) => {
       await sender.save();
       await receiver.save();
     }
-    
     const newMessage = new Message({
       senderId: req.session.userId,
       receiverId,
@@ -1459,11 +1602,9 @@ app.post('/messages', requireLogin, async (req, res) => {
       isTip: tipAmount > 0,
       tipAmount: tipAmount || 0
     });
-    
     await newMessage.save();
     await newMessage.populate('senderId', 'username fullName profilePic');
     await newMessage.populate('receiverId', 'username fullName profilePic');
-    
     res.json({ success: true, message: newMessage });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1477,7 +1618,6 @@ app.get('/messages/unread/count', requireLogin, async (req, res) => {
       receiverId: req.session.userId,
       isRead: false
     });
-    
     res.json({ success: true, count });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1495,7 +1635,6 @@ app.post('/messages/:userId/read', requireLogin, async (req, res) => {
       },
       { isRead: true }
     );
-    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1506,20 +1645,16 @@ app.post('/messages/:userId/read', requireLogin, async (req, res) => {
 app.post('/payment/request', requireLogin, uploadProfile.single('screenshot'), async (req, res) => {
   try {
     const { type, amount } = req.body;
-    
     if (!type || !amount || !req.file) {
       return res.status(400).json({ success: false, message: "Barcha ma'lumotlar va screenshot kerak" });
     }
-    
     const newRequest = new PaymentRequest({
       userId: req.session.userId,
       type,
       amount: parseFloat(amount),
       screenshot: req.file.path // Cloudinary URL
     });
-    
     await newRequest.save();
-    
     res.json({ success: true, message: "To'lov so'rovi yuborildi, admin tasdiqlashini kutib turing" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1532,7 +1667,6 @@ app.get('/user/payments', requireLogin, async (req, res) => {
     const payments = await PaymentRequest.find({ userId: req.session.userId })
       .populate('userId', 'username fullName')
       .sort({ createdAt: -1 });
-    
     res.json({ success: true, payments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1545,7 +1679,6 @@ app.get('/admin/payments', requireAdmin, async (req, res) => {
     const payments = await PaymentRequest.find()
       .populate('userId', 'username fullName email')
       .sort({ createdAt: -1 });
-    
     res.json({ success: true, payments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1557,17 +1690,13 @@ app.put('/admin/payments/:id/approve', requireAdmin, async (req, res) => {
   try {
     const { notes } = req.body;
     const payment = await PaymentRequest.findById(req.params.id).populate('userId');
-    
     if (!payment || payment.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Noto'g'ri so'rov" });
     }
-    
     payment.status = 'approved';
     payment.notes = notes || '';
     await payment.save();
-    
     const user = payment.userId;
-    
     switch (payment.type) {
       case 'balance':
         user.balance += payment.amount;
@@ -1584,9 +1713,7 @@ app.put('/admin/payments/:id/approve', requireAdmin, async (req, res) => {
       default:
         return res.status(400).json({ success: false, message: "Noto'g'ri to'lov turi" });
     }
-    
     await user.save();
-    
     res.json({ success: true, message: 'To\'lov tasdiqlandi' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1598,15 +1725,12 @@ app.put('/admin/payments/:id/reject', requireAdmin, async (req, res) => {
   try {
     const { notes } = req.body;
     const payment = await PaymentRequest.findById(req.params.id);
-    
     if (!payment || payment.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Noto'g'ri so'rov" });
     }
-    
     payment.status = 'rejected';
     payment.notes = notes || '';
     await payment.save();
-    
     res.json({ success: true, message: 'To\'lov rad etildi' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1618,14 +1742,12 @@ app.get('/ads', requireLogin, async (req, res) => {
   try {
     // Simulyatsiya: oddiy reklamalar (Cloudinary ga yuklangan deb faraz qilamiz, yoki o'zgartiring)
     const ads = [
-      { id: 1, title: 'Reklama 1', image: 'https://res.cloudinary.com/your-cloud/image/upload/v1/social-media/ad1.jpg', url: 'https://example.com' },
-      { id: 2, title: 'Reklama 2', image: 'https://res.cloudinary.com/your-cloud/image/upload/v1/social-media/ad2.jpg', url: 'https://example.com' }
+      { id: 1, title: 'Reklama 1', image: 'https://res.cloudinary.com/demo/image/upload/v1/social-media/ad1.jpg', url: 'https://example.com' },
+      { id: 2, title: 'Reklama 2', image: 'https://res.cloudinary.com/demo/image/upload/v1/social-media/ad2.jpg', url: 'https://example.com' }
     ];
-    
     // Premium foydalanuvchilar uchun kam reklama
     const user = await User.findById(req.session.userId);
     const filteredAds = user.isPremium ? ads.slice(0, 1) : ads;
-    
     res.json({ success: true, ads: filteredAds });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1641,12 +1763,10 @@ app.post('/posts/:id/sponsor', requireAdmin, async (req, res) => {
       { isSponsored: true, sponsorPrice: price },
       { new: true }
     );
-    
     // Muallifga pul o'tkazish
     const user = await User.findById(post.userId);
     user.balance += price * 0.7; // 70% muallifga
     await user.save();
-    
     res.json({ success: true, post });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1660,7 +1780,6 @@ app.get('/admin/stats', requireAdmin, async (req, res) => {
     const postCount = await Post.countDocuments();
     const totalEarnings = await Post.aggregate([{ $group: { _id: null, total: { $sum: '$sponsorPrice' } } }]);
     const premiumUsers = await User.countDocuments({ isPremium: true });
-    
     // Eng ko'p obunachiga ega bo'lgan 10 ta foydalanuvchi
     const topUsers = await User.aggregate([
       {
@@ -1674,7 +1793,6 @@ app.get('/admin/stats', requireAdmin, async (req, res) => {
       { $sort: { followersCount: -1 } },
       { $limit: 10 }
     ]);
-    
     res.json({
       success: true,
       stats: {
@@ -1706,7 +1824,6 @@ app.get('/admin/posts', requireAdmin, async (req, res) => {
     const posts = await Post.find()
       .populate('userId', 'username fullName')
       .sort({ createdAt: -1 });
-    
     res.json({ success: true, posts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1717,7 +1834,7 @@ app.get('/admin/posts', requireAdmin, async (req, res) => {
 app.delete('/admin/posts/:id', requireAdmin, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (post.media) {
+    if (post && post.media) {
       const publicId = cloudinary.utils.extractPublicId(post.media);
       if (publicId) {
         await cloudinary.uploader.destroy(publicId);
@@ -1759,15 +1876,12 @@ app.post('/game/daily-reward', requireLogin, async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const lastReward = user.lastDailyReward ? new Date(user.lastDailyReward) : new Date(0);
     lastReward.setHours(0, 0, 0, 0);
-
     if (lastReward >= today) {
       return res.status(400).json({ success: false, message: "Bugun allaqachon mukofot oldingiz" });
     }
-
     user.coins += 10;
     user.lastDailyReward = new Date();
     await user.save();
-
     res.json({ success: true, coins: user.coins, message: "10 coin oldingiz!" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1780,11 +1894,9 @@ app.post('/game/coin-flip', requireLogin, async (req, res) => {
     const { bet } = req.body;
     const betAmount = parseInt(bet) || 1;
     const user = await User.findById(req.session.userId);
-
     if (user.coins < betAmount) {
       return res.status(400).json({ success: false, message: "Yetarli coin yo'q" });
     }
-
     const isWin = Math.random() > 0.5;
     if (isWin) {
       user.coins += betAmount;
@@ -1804,20 +1916,16 @@ app.post('/game/coin-flip', requireLogin, async (req, res) => {
 app.post('/withdraw', requireLogin, async (req, res) => {
   try {
     const { amount, cardNumber } = req.body; // Real loyihada expiry, cvv ham qo'shing va payment gateway ishlatish
-
     if (!amount || !cardNumber) {
       return res.status(400).json({ success: false, message: "Miqdor va karta raqami kerak" });
     }
-
     const parsedAmount = parseFloat(amount);
     if (parsedAmount <= 0) {
       return res.status(400).json({ success: false, message: "Miqdor musbat bo'lishi kerak" });
     }
-
     const taxRate = 0.05;
     const tax = parsedAmount * taxRate;
     const netAmount = parsedAmount - tax;
-
     const newWithdrawal = new Withdrawal({
       userId: req.session.userId,
       amount: parsedAmount,
@@ -1825,7 +1933,6 @@ app.post('/withdraw', requireLogin, async (req, res) => {
       netAmount,
       cardNumber
     });
-
     await newWithdrawal.save();
     res.json({ success: true, message: "Yechish so'rovi yuborildi, admin tasdiqlashini kutib turing. Net miqdor: " + netAmount });
   } catch (error) {
@@ -1862,27 +1969,21 @@ app.put('/admin/withdrawals/:id/approve', requireAdmin, async (req, res) => {
   try {
     const { notes } = req.body;
     const withdrawal = await Withdrawal.findById(req.params.id).populate('userId');
-
     if (!withdrawal || withdrawal.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Noto'g'ri so'rov" });
     }
-
     const user = withdrawal.userId;
     if (user.balance < withdrawal.amount) {
       return res.status(400).json({ success: false, message: "Foydalanuvchida yetarli balans yo'q" });
     }
-
     // Balansni ushlash
     user.balance -= withdrawal.amount;
     await user.save();
-
     // Status yangilash
     withdrawal.status = 'approved';
     withdrawal.notes = notes || '';
     await withdrawal.save();
-
     // Real loyihada: cardNumber bilan payment gateway orqali pul yuborish (masalan, Stripe)
-
     res.json({ success: true, message: 'Yechish tasdiqlandi va balans ushlab qoldi' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1894,15 +1995,12 @@ app.put('/admin/withdrawals/:id/reject', requireAdmin, async (req, res) => {
   try {
     const { notes } = req.body;
     const withdrawal = await Withdrawal.findById(req.params.id).populate('userId');
-
     if (!withdrawal || withdrawal.status !== 'pending') {
       return res.status(400).json({ success: false, message: "Noto'g'ri so'rov" });
     }
-
     withdrawal.status = 'rejected';
     withdrawal.notes = notes || '';
     await withdrawal.save();
-
     // Balansni qaytarish (agar oldin ushlanmagan bo'lsa, bu yerda hech narsa qilmaslik mumkin, lekin misol uchun)
     res.json({ success: true, message: 'Yechish rad etildi' });
   } catch (error) {
@@ -1915,15 +2013,12 @@ app.delete('/posts/:id', requireLogin, async (req, res) => {
   try {
     const postId = req.params.id;
     const post = await Post.findById(postId);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post topilmadi' });
     }
-    
     if (post.userId.toString() !== req.session.userId) {
       return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
     }
-    
     // Post bilan bog'liq media fayllarni Cloudinary dan o'chirish
     if (post.media) {
       const publicId = cloudinary.utils.extractPublicId(post.media);
@@ -1931,10 +2026,8 @@ app.delete('/posts/:id', requireLogin, async (req, res) => {
         await cloudinary.uploader.destroy(publicId);
       }
     }
-    
     // Postni ma'lumotlar bazasidan o'chirish
     await Post.findByIdAndDelete(postId);
-    
     res.json({ success: true, message: 'Post muvaffaqiyatli o\'chirildi' });
   } catch (error) {
     console.error(error);
@@ -1947,25 +2040,39 @@ app.put('/posts/:id', requireLogin, async (req, res) => {
   try {
     const postId = req.params.id;
     const { content } = req.body;
-    
     const post = await Post.findById(postId);
-    
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post topilmadi' });
     }
-    
     if (post.userId.toString() !== req.session.userId) {
       return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
     }
-    
     // Post kontentini yangilash
     post.content = content;
     await post.save();
-    
     res.json({ success: true, message: 'Post muvaffaqiyatli yangilandi', post });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server xatosi' });
+  }
+});
+
+// Static pages for news
+app.get('/news', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'news.html'));
+});
+
+app.get('/search', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+app.get('/news/:id', async (req, res) => {
+  try {
+    const article = await News.findById(req.params.id).populate('journalistId');
+    if (!article) return res.status(404).send('Yangilik topilmadi');
+    res.sendFile(path.join(__dirname, 'public', 'news-article.html')); // Template, JS bilan load
+  } catch (error) {
+    res.status(500).send('Xato');
   }
 });
 
