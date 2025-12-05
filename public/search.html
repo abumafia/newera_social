@@ -1,0 +1,77 @@
+<!-- search.html: Realtime search with filters, autocomplete, results grid. -->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qidiruv - NewEra News</title>
+    <meta name="description" content="Yangiliklar bo'yicha qidiruv: sarlavha, hashtag, muallif.">
+    <meta property="og:title" content="Qidiruv - NewEra">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uuid@latest/dist/umd/uuidv4.min.js"></script>
+    <!-- Similar styles as news.html -->
+    <style> /* Copy from news.html */ </style>
+</head>
+<body class="font-sans min-h-screen dark:bg-gray-900 dark:text-white">
+    <header class="glass-nav fixed w-full top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3">
+            <a href="/news" class="text-xl font-bold">NewEra News</a>
+            <input type="text" id="searchInput" placeholder="Qidiruv: sarlavha, #hashtag, muallif..." class="glass-input flex-1 px-4 py-2 rounded ml-4">
+            <select id="searchType" class="glass-input px-4 py-2 rounded ml-2">
+                <option value="all">Barchasi</option>
+                <option value="title">Sarlavha</option>
+                <option value="hashtag">Hashtag</option>
+                <option value="author">Muallif</option>
+            </select>
+        </div>
+    </header>
+
+    <section class="pt-20 max-w-6xl mx-auto px-4">
+        <div id="searchResults" class="grid md:grid-cols-3 gap-6">
+            <!-- Results -->
+        </div>
+        <div id="loadMoreSearch" class="text-center mt-8">
+            <button class="twitter-blue text-white px-6 py-3 rounded-full">Ko'proq</button>
+        </div>
+    </section>
+
+    <script>
+        let searchPage = 1;
+        let deviceId = localStorage.getItem('deviceId') || uuidv4();
+
+        const input = document.getElementById('searchInput');
+        const type = document.getElementById('searchType');
+
+        // Debounce for realtime search
+        let timeout;
+        input.addEventListener('input', (e) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => performSearch(e.target.value, type.value), 300);
+        });
+
+        type.addEventListener('change', () => performSearch(input.value, type.value));
+
+        async function performSearch(q, t) {
+            if (q.length < 2) return document.getElementById('searchResults').innerHTML = '<p>Qidiruv boshlash uchun 2+ belgi kiriting</p>';
+            searchPage = 1;
+            const res = await fetch(`/api/search?q=${q}&type=${t}&page=1`, { headers: { 'device-id': deviceId } });
+            const { articles } = await res.json();
+            document.getElementById('searchResults').innerHTML = articles.map(article => `
+                <div class="glass-card p-4 rounded-xl">
+                    <h3>${article.title}</h3>
+                    <p>${article.description.substring(0, 100)}...</p>
+                    <a href="/news/${article._id}">O'qish</a>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('loadMoreSearch').addEventListener('click', async () => {
+            const q = input.value;
+            const t = type.value;
+            const res = await fetch(`/api/search?q=${q}&type=${t}&page=${++searchPage}`, { headers: { 'device-id': deviceId } });
+            const { articles } = await res.json();
+            // Append to results
+        });
+    </script>
+</body>
+</html>
