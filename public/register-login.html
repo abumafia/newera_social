@@ -406,80 +406,97 @@
                 }, 5000);
             }
             
-            // Kirish (login endpoint)
-app.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    // Validatsiya
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: "Foydalanuvchi nomi va parolni kiriting" });
-    }
-    // Foydalanuvchini topish
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ success: false, message: "Foydalanuvchi topilmadi" });
-    }
-    // Parolni tekshirish
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Noto'g'ri parol" });
-    }
-    // Sessionga saqlash
-    req.session.userId = user._id;
-    req.session.username = user.username;
-    req.session.isAdmin = user.username === 'admin';
-
-    // O'ZGARISH: Session ni majburiy saqlash (MongoStore uchun)
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session saqlashda xatolik:', err);
-        return res.status(500).json({ success: false, message: "Session saqlashda xatolik" });
-      }
-      res.json({ success: true, message: "Muvaffaqiyatli kirdingiz", userId: user._id });
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Ro'yxatdan o'tish (register endpoint)
-app.post('/register', async (req, res) => {
-  try {
-    const { username, password, email, fullName } = req.body;
-    // Validatsiya
-    if (!username || !password || !email || !fullName) {
-      return res.status(400).json({ success: false, message: "Barcha maydonlarni to'ldiring" });
-    }
-    // Parolni hash qilish
-    const hashedPassword = await bcrypt.hash(password, 12);
-    // Yangi foydalanuvchi yaratish
-    const newUser = new User({
-      username,
-      password: hashedPassword,
-      email,
-      fullName
-    });
-    await newUser.save();
-    // Sessionga saqlash
-    req.session.userId = newUser._id;
-    req.session.username = newUser.username;
-    req.session.isAdmin = newUser.username === 'admin';
-
-    // O'ZGARISH: Session ni majburiy saqlash (MongoStore uchun)
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session saqlashda xatolik:', err);
-        return res.status(500).json({ success: false, message: "Session saqlashda xatolik" });
-      }
-      res.json({ success: true, message: "Ro'yxatdan muvaffaqiyatli o'tdingiz", userId: newUser._id });
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: "Foydalanuvchi nomi yoki email allaqachon mavjud" });
-    }
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+            // Login form
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                if (!username || !password) {
+                    showMessage('Iltimos, barcha maydonlarni to\'ldiring', 'error');
+                    return;
+                }
+                
+                setLoading('login', true);
+                
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showMessage('Muvaffaqiyatli kirish!', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Tarmoq xatosi. Qayta urunib ko\'ring.', 'error');
+                } finally {
+                    setLoading('login', false);
+                }
+            });
+            
+            // Register form
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const fullName = document.getElementById('registerFullName').value;
+                const username = document.getElementById('registerUsername').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                
+                if (!fullName || !username || !email || !password) {
+                    showMessage('Iltimos, barcha maydonlarni to\'ldiring', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showMessage('Parol kamida 6 ta belgidan iborat bo\'lishi kerak', 'error');
+                    return;
+                }
+                
+                setLoading('register', true);
+                
+                try {
+                    const response = await fetch('/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fullName, username, email, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showMessage('Muvaffaqiyatli ro\'yxatdan o\'tish!', 'success');
+                        setTimeout(() => {
+                            switchToLogin();
+                            // Formani tozalash
+                            document.getElementById('registerFullName').value = '';
+                            document.getElementById('registerUsername').value = '';
+                            document.getElementById('registerEmail').value = '';
+                            document.getElementById('registerPassword').value = '';
+                        }, 2000);
+                    } else {
+                        showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Tarmoq xatosi. Qayta urunib ko\'ring.', 'error');
+                } finally {
+                    setLoading('register', false);
+                }
+            });
             
             // Inputlarda fokus bo'lganda animatsiya
             const inputs = document.querySelectorAll('input');
