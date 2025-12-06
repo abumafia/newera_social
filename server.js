@@ -989,38 +989,7 @@ app.post('/api/shorts', requireLogin, uploadMedia.single('video'), async (req, r
   }
 });
 
-// Ro'yxatdan o'tish
-app.post('/register', async (req, res) => {
-  try {
-    const { username, password, email, fullName } = req.body;
-    // Validatsiya
-    if (!username || !password || !email || !fullName) {
-      return res.status(400).json({ success: false, message: "Barcha maydonlarni to'ldiring" });
-    }
-    // Parolni hash qilish
-    const hashedPassword = await bcrypt.hash(password, 12);
-    // Yangi foydalanuvchi yaratish
-    const newUser = new User({
-      username,
-      password: hashedPassword,
-      email,
-      fullName
-    });
-    await newUser.save();
-    // Sessionga saqlash
-    req.session.userId = newUser._id;
-    req.session.username = newUser.username;
-    req.session.isAdmin = newUser.username === 'admin';
-    res.json({ success: true, message: "Ro'yxatdan muvaffaqiyatli o'tdingiz", userId: newUser._id });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: "Foydalanuvchi nomi yoki email allaqachon mavjud" });
-    }
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Kirish
+// Kirish (login endpoint)
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -1042,8 +1011,55 @@ app.post('/login', async (req, res) => {
     req.session.userId = user._id;
     req.session.username = user.username;
     req.session.isAdmin = user.username === 'admin';
-    res.json({ success: true, message: "Muvaffaqiyatli kirdingiz", userId: user._id });
+
+    // O'ZGARISH: Session ni majburiy saqlash (MongoStore uchun)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session saqlashda xatolik:', err);
+        return res.status(500).json({ success: false, message: "Session saqlashda xatolik" });
+      }
+      res.json({ success: true, message: "Muvaffaqiyatli kirdingiz", userId: user._id });
+    });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Ro'yxatdan o'tish (register endpoint)
+app.post('/register', async (req, res) => {
+  try {
+    const { username, password, email, fullName } = req.body;
+    // Validatsiya
+    if (!username || !password || !email || !fullName) {
+      return res.status(400).json({ success: false, message: "Barcha maydonlarni to'ldiring" });
+    }
+    // Parolni hash qilish
+    const hashedPassword = await bcrypt.hash(password, 12);
+    // Yangi foydalanuvchi yaratish
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+      email,
+      fullName
+    });
+    await newUser.save();
+    // Sessionga saqlash
+    req.session.userId = newUser._id;
+    req.session.username = newUser.username;
+    req.session.isAdmin = newUser.username === 'admin';
+
+    // O'ZGARISH: Session ni majburiy saqlash (MongoStore uchun)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session saqlashda xatolik:', err);
+        return res.status(500).json({ success: false, message: "Session saqlashda xatolik" });
+      }
+      res.json({ success: true, message: "Ro'yxatdan muvaffaqiyatli o'tdingiz", userId: newUser._id });
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: "Foydalanuvchi nomi yoki email allaqachon mavjud" });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 });
