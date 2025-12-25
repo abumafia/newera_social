@@ -8,6 +8,7 @@ const path = require('path');
 const MongoStore = require('connect-mongo');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cors = require('cors');  // Yangi: CORS uchun qo'shildi
 
 const liveStreams = new Map(); // Real-time storage for active streams
 const liveStreamComments = new Map(); // Store comments for each stream
@@ -17,6 +18,17 @@ const liveStreamGifts = new Map(); // Store gifts for each stream
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Yangi: CORS middleware qo'shildi (frontend domenlarini ruxsat etish uchun)
+app.use(cors({
+  origin: [
+    'https://www.hallaym.site',  // Production frontend
+    'http://localhost:3000'      // Development uchun
+  ],
+  credentials: true,  // Session cookie'lari uchun muhim
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Cloudinary sozlamalari
 cloudinary.config({
