@@ -426,7 +426,8 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ username, password })
+                        body: JSON.stringify({ username, password }),
+                        credentials: 'include'  // Bu qatori qo'shing
                     });
                     
                     const data = await response.json();
@@ -473,7 +474,8 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ fullName, username, email, password })
+                        body: JSON.stringify({ fullName, username, email, password }),
+                        credentials: 'include'  // Bu qatori qo'shing
                     });
                     
                     const data = await response.json();
