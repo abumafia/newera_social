@@ -569,30 +569,18 @@
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
+        // Yordamchi fetch funksiyasi: Har doim credentials qo'shadi
+        async function apiFetch(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                credentials: 'include'  // <-- Bu qator muhim: Session cookie'larni yuboradi
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
-            await initializeSession();
+            await checkSession();  // Birlashtirilgan session tekshirish
             loadPosts();
             setupCreateModal();
-            
-            async function checkSession() {
-                try {
-                    const response = await fetch('https://newera-social.onrender.com/user/me');
-                    if (response.status === 401) {
-                        window.location.href = '/register-login.html';
-                        return;
-                    }
-                    
-                    const data = await response.json();
-                    if (!data.success) {
-                        window.location.href = '/register-login.html';
-                    }
-                } catch (error) {
-                    console.error('Session tekshirishda xatolik:', error);
-                    window.location.href = '/register-login.html';
-                }
-            }
-
-            await checkSession();
             
             document.getElementById('loadMoreBtn').addEventListener('click', () => {
                 if (isSearching) {
@@ -666,7 +654,7 @@
                     const amountStr = prompt('Necha coin yubormoqchisiz? (minimal 1)');
                     const amount = parseInt(amountStr);
                     if (amount && amount >= 1) {
-                        fetch(`https://newera-social.onrender.com/posts/${postId}/send-coin`, {
+                        apiFetch(`https://newera-social.onrender.com/posts/${postId}/send-coin`, {  // <-- apiFetch ishlatildi
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ amount })
@@ -689,9 +677,9 @@
             });
         });
 
-        async function initializeSession() {
+        async function checkSession() {  // <-- Birlashtirilgan: initializeSession va checkSession
             try {
-                const response = await fetch('https://newera-social.onrender.com/user/me');
+                const response = await apiFetch('https://newera-social.onrender.com/user/me');  // <-- apiFetch ishlatildi
                 if (response.status === 401) {
                     window.location.href = '/register-login.html';
                     return;
@@ -705,7 +693,7 @@
                     
                     document.getElementById('logoutBtn').addEventListener('click', async () => {
                         try {
-                            await fetch('https://newera-social.onrender.com/logout', { method: 'POST' });
+                            await apiFetch('https://newera-social.onrender.com/logout', { method: 'POST' });  // <-- apiFetch
                             window.location.href = '/register-login.html';
                         } catch (error) {
                             console.error('Chiqishda xatolik:', error);
@@ -718,9 +706,12 @@
                             insertAd();
                         }, 5000); // Har 5 soniyada tekshirish
                     }
+                } else {
+                    window.location.href = '/register-login.html';
                 }
             } catch (error) {
-                console.error('Session ma\'lumotlarini olishda xatolik:', error);
+                console.error('Session tekshirishda xatolik:', error);
+                window.location.href = '/register-login.html';
             }
         }
 
@@ -899,7 +890,7 @@
                 }
 
                 try {
-                    const response = await fetch('https://newera-social.onrender.com/posts', {
+                    const response = await apiFetch('https://newera-social.onrender.com/posts', {  // <-- apiFetch ishlatildi
                         method: 'POST',
                         body: formData
                     });
@@ -937,7 +928,7 @@
 
         async function insertAd() {
             try {
-                const response = await fetch('https://newera-social.onrender.com/ads');
+                const response = await apiFetch('https://newera-social.onrender.com/ads');  // <-- apiFetch
                 const data = await response.json();
                 if (data.success && data.ads.length > 0) {
                     const adElement = document.createElement('div');
@@ -980,7 +971,7 @@
                 
                 searchTimeout = setTimeout(async () => {
                     try {
-                        const response = await fetch(`https://newera-social.onrender.com/search?q=${encodeURIComponent(query)}&type=quick`);
+                        const response = await apiFetch(`https://newera-social.onrender.com/search?q=${encodeURIComponent(query)}&type=quick`);  // <-- apiFetch
                         const data = await response.json();
                         
                         if (data.success) {
@@ -1065,7 +1056,7 @@
                 html += `
                     <div class="p-2 text-center bg-gray-800">
                         <button id="viewAllResults" class="text-blue-400 text-sm font-medium">
-                            Barcha natijalarni ko'rish
+                            Barcha natijalarni ko'rsatish
                         </button>
                     </div>
                 `;
@@ -1126,7 +1117,7 @@
             }
             
             try {
-                const response = await fetch(`https://newera-social.onrender.com/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}`);
+                const response = await apiFetch(`https://newera-social.onrender.com/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}`);  // <-- apiFetch
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1203,7 +1194,7 @@
             }
             
             try {
-                const response = await fetch(`https://newera-social.onrender.com/posts?page=${currentPage}`);
+                const response = await apiFetch(`https://newera-social.onrender.com/posts?page=${currentPage}`);  // <-- apiFetch
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1223,6 +1214,7 @@
                 }
             } catch (error) {
                 console.error('Postlarni yuklashda xatolik:', error);
+                showMessage('Postlarni yuklashda xatolik yuz berdi', 'error');
             } finally {
                 isLoading = false;
             }
@@ -1373,7 +1365,7 @@
                     const postId = this.getAttribute('data-post-id');
                     
                     try {
-                        const response = await fetch(`https://newera-social.onrender.com/posts/${postId}/like`, {
+                        const response = await apiFetch(`https://newera-social.onrender.com/posts/${postId}/like`, {  // <-- apiFetch
                             method: 'POST'
                         });
                         
@@ -1414,7 +1406,7 @@
                     const content = this.querySelector('input').value;
                     
                     try {
-                        const response = await fetch(`https://newera-social.onrender.com/posts/${postId}/comment`, {
+                        const response = await apiFetch(`https://newera-social.onrender.com/posts/${postId}/comment`, {  // <-- apiFetch
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1516,7 +1508,7 @@
                 const postId = btn.dataset.postId;
                 const commentId = btn.dataset.commentId;
                 
-                fetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/like`, { method: 'POST' })
+                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/like`, { method: 'POST' })  // <-- apiFetch
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -1550,7 +1542,7 @@
                     const commentId = form.dataset.commentId;
                     const content = form.querySelector('input').value;
                     
-                    fetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/reply`, {
+                    apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/reply`, {  // <-- apiFetch
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ content })
@@ -1575,7 +1567,7 @@
                 const commentId = btn.dataset.commentId;
                 const replyId = btn.dataset.replyId;
                 
-                fetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/replies/${replyId}/like`, { method: 'POST' })
+                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/replies/${replyId}/like`, { method: 'POST' })  // <-- apiFetch (agar endpoint mavjud bo'lsa; serverda qo'shish kerak bo'lishi mumkin)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
