@@ -12,7 +12,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "path": "^0.12.7",
     "uuid": "^13.0.0",
-    "cors": "^2.8.5"  // <-- Bu qator qo'shiladi!
+    "cors": "^2.8.5"
   },
   "name": "newera",
   "version": "1.0.0",
