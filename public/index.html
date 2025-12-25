@@ -657,7 +657,8 @@
                         apiFetch(`https://newera-social.onrender.com/posts/${postId}/send-coin`, {  // <-- apiFetch ishlatildi
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ amount })
+                            body: JSON.stringify({ amount }),
+                            credentials: 'include'
                         })
                         .then(res => res.json())
                         .then(data => {
@@ -693,7 +694,7 @@
                     
                     document.getElementById('logoutBtn').addEventListener('click', async () => {
                         try {
-                            await apiFetch('https://newera-social.onrender.com/logout', { method: 'POST' });  // <-- apiFetch
+                            await apiFetch('https://newera-social.onrender.com/logout', { method: 'POST', credentials: 'include' });  // <-- apiFetch
                             window.location.href = '/register-login.html';
                         } catch (error) {
                             console.error('Chiqishda xatolik:', error);
@@ -892,7 +893,8 @@
                 try {
                     const response = await apiFetch('https://newera-social.onrender.com/posts', {  // <-- apiFetch ishlatildi
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        credentials: 'include'
                     });
                     const data = await response.json();
                     if (data.success) {
@@ -1366,7 +1368,8 @@
                     
                     try {
                         const response = await apiFetch(`https://newera-social.onrender.com/posts/${postId}/like`, {  // <-- apiFetch
-                            method: 'POST'
+                            method: 'POST,
+                                credentials: 'include'
                         });
                         
                         const data = await response.json();
@@ -1411,7 +1414,8 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ content })
+                            body: JSON.stringify({ content }),
+                            credentials: 'include'
                         });
                         
                         const data = await response.json();
@@ -1508,7 +1512,7 @@
                 const postId = btn.dataset.postId;
                 const commentId = btn.dataset.commentId;
                 
-                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/like`, { method: 'POST' })  // <-- apiFetch
+                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/like`, { method: 'POST', credentials: 'include' })  // <-- apiFetch
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -1545,7 +1549,8 @@
                     apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/reply`, {  // <-- apiFetch
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content })
+                        body: JSON.stringify({ content }),
+                        credentials: 'include'
                     })
                         .then(res => res.json())
                         .then(data => {
@@ -1567,7 +1572,7 @@
                 const commentId = btn.dataset.commentId;
                 const replyId = btn.dataset.replyId;
                 
-                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/replies/${replyId}/like`, { method: 'POST' })  // <-- apiFetch (agar endpoint mavjud bo'lsa; serverda qo'shish kerak bo'lishi mumkin)
+                apiFetch(`https://newera-social.onrender.com/posts/${postId}/comments/${commentId}/replies/${replyId}/like`, { method: 'POST', credentials: 'include' })  // <-- apiFetch (agar endpoint mavjud bo'lsa; serverda qo'shish kerak bo'lishi mumkin)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
