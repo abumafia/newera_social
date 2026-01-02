@@ -17,6 +17,9 @@ const liveStreamGifts = new Map(); // Store gifts for each stream
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// FIXED: Wallet API key env dan olish
+const WALLET_API_KEY = process.env.WALLET_API_KEY || 'wallet-api-key'; // .env da WALLET_API_KEY=your_secret qo'shing
+
 // Cloudinary sozlamalari (Render da environment variables qo'shing: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,6 +31,10 @@ cloudinary.config({
 mongoose.connect('mongodb+srv://apl:apl00@gamepaymentbot.ffcsj5v.mongodb.net/schb?retryWrites=true&w=majority', {
   useNewUrlParser: true,
   useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
 });
 
 // Modellar
@@ -40,7 +47,7 @@ const UserSchema = new mongoose.Schema({
   bio: { type: String, default: '' },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  balance: { type: Number, default: 0 }, // Virtual pul balans (monetizatsiya uchun)
+  balance: { type: Number, default: 0 }, // FIXED: H-coin ekvivalent (wallet dan kelgan)
   isPremium: { type: Boolean, default: false }, // Premium obuna holati
   premiumExpiresAt: { type: Date, default: null }, // Premium tugash sanasi
   coins: { type: Number, default: 0 }, // Ichki valyuta (sotib olish uchun)
@@ -280,7 +287,7 @@ async function calcPayouts(post) {
   const likeGroups = Math.floor(post.likes.length / 100);
   const earnedLikes = likeGroups - post.payouts.likes;
   if (earnedLikes > 0) {
-    user.balance += earnedLikes * 1; // $1 per 100 likes
+    user.balance += earnedLikes * 1; // $1 per 100 likes (H-coin ekvivalent)
     post.payouts.likes = likeGroups;
   }
 
@@ -304,7 +311,35 @@ async function calcPayouts(post) {
   await post.save();
 }
 
-// Routes
+// FIXED: Add-balance endpoint – use env key for auth; log better; optional conversion if needed
+// Yangi: Wallet integration - Add balance from wallet
+app.post('/api/user/:username/add-balance', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${WALLET_API_KEY}`) { // FIXED: Use env key
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { amount, fromWalletUser } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.balance += parseFloat(amount); // FIXED: H-coin ekvivalent qo'shish (konvertatsiya kerak bo'lsa, HcoinValue dan oling)
+    await user.save();
+    console.log(`Added ${amount} H-Coin to ${req.params.username} from wallet ${fromWalletUser?.walletNumber || 'unknown'} (user: ${fromWalletUser?.username || 'unknown'})`);
+    res.json({ 
+      success: true, 
+      newBalance: user.balance, 
+      from: fromWalletUser 
+    });
+  } catch (error) {
+    console.error('Add balance error:', error);
+    res.status(500).json({ error: 'Failed to add balance' });
+  }
+});
 
 // Create a new live stream
 app.post('/api/live/start', requireLogin, uploadProfile.single('thumbnail'), async (req, res) => {
@@ -1100,31 +1135,6 @@ app.post('/posts', requireLogin, uploadMedia.single('media'), async (req, res) =
   }
 });
 
-// Yangi: Wallet integration - Add balance from wallet
-app.post('/api/user/:username/add-balance', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader !== 'Bearer wallet-api-key') {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  try {
-    const { amount, fromWalletUser } = req.body;
-    const user = await User.findOne({ username: req.params.username });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    user.balance += amount; // NewEra balansiga H-coin qo'shish
-    await user.save();
-    console.log(`Added ${amount} H-Coin to ${req.params.username} from wallet ${fromWalletUser.walletNumber}`);
-    res.json({ 
-      success: true, 
-      newBalance: user.balance, 
-      from: fromWalletUser 
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to add balance' });
-  }
-});
-
 // Postlarni olish (boostlanganlarni yuqorida ko'rsatish, rejalashtirilganlarni ham)
 app.get('/posts', requireLogin, async (req, res) => {
   try {
@@ -1718,7 +1728,7 @@ app.delete('/admin/posts/:id', requireAdmin, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (post.media) {
-      const publicId = cloudinary.utils.extractPublicId(post.media);
+      const publicId = cloudinary.uploader.destroy(publicId);
       if (publicId) {
         await cloudinary.uploader.destroy(publicId);
       }
@@ -1738,7 +1748,7 @@ app.delete('/admin/users/:id', requireAdmin, async (req, res) => {
     const posts = await Post.find({ userId: req.params.id });
     for (const post of posts) {
       if (post.media) {
-        const publicId = cloudinary.utils.extractPublicId(post.media);
+        const publicId = cloudinary.uploader.extractPublicId(post.media);
         if (publicId) {
           await cloudinary.uploader.destroy(publicId);
         }
@@ -1926,7 +1936,7 @@ app.delete('/posts/:id', requireLogin, async (req, res) => {
     
     // Post bilan bog'liq media fayllarni Cloudinary dan o'chirish
     if (post.media) {
-      const publicId = cloudinary.utils.extractPublicId(post.media);
+      const publicId = cloudinary.uploader.extractPublicId(post.media);
       if (publicId) {
         await cloudinary.uploader.destroy(publicId);
       }
