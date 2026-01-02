@@ -1,0 +1,398 @@
+<!-- news-article.html: Individual article page matching news.html design - Dark glassmorphism theme, mobile-first responsive, enhanced likes/comments/sharing/views. -->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="articleTitle">Yangilik - NewEra</title>
+    <meta id="articleDesc" name="description" content="">
+    <meta property="og:title" content="">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="">
+    <meta property="og:url" content="">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uuid@latest/dist/umd/uuidv4.min.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7GGGMHG9RD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-7GGGMHG9RD');
+    </script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 100: '#1a1a1a', 200: '#141414', 300: '#0f0f0f', 400: '#0a0a0a', 500: '#050505' },
+                        glass: { light: 'rgba(255, 255, 255, 0.1)', dark: 'rgba(0, 0, 0, 0.4)', border: 'rgba(255, 255, 255, 0.2)' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%); color: #f1f1f1; }
+        .dark { @apply bg-gray-900 text-white; }
+        .glass-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); }
+        .glass-nav { background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-input { background: rgba(15, 15, 15, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #f1f1f1; }
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .glass-input:focus { border-color: rgba(59, 130, 246, 0.5); outline: none; }
+        .category-filter { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .category-filter.active { background: rgba(59, 130, 246, 0.3); }
+        .hashtag { background: rgba(29, 161, 242, 0.2); color: #1DA1F2; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; }
+        .youtube-iframe { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .youtube-iframe iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(30, 30, 30, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(100, 100, 100, 0.5); border-radius: 4px; }
+        .twitter-blue { background-color: #1DA1F2; }
+        .twitter-blue:hover { background-color: #1a91da; }
+        img { loading: lazy; }
+        .prose-dark { @apply prose prose-invert max-w-none text-gray-200 leading-relaxed prose-headings:text-white prose-headings:font-bold prose-p:text-gray-300 prose-li:text-gray-300 prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-strong:text-white prose-blockquote:border-blue-400/30 prose-blockquote:bg-blue-900/20; }
+        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-soft { animation: fadeInSoft 0.6s ease-out forwards; }
+        .comments-toggle { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out, opacity 0.5s ease-out; }
+        .comments-toggle.open { max-height: 1000px; opacity: 1; }
+        .comment-item { @apply glass-card p-4 mb-4 rounded-lg border-l-4 border-blue-400/50 bg-blue-900/10 transition-all duration-300 hover:bg-blue-900/20; }
+        .like-btn { transition: all 0.3s ease; }
+        .like-btn.liked { @apply bg-red-500 text-white; }
+        .share-compact { @apply flex space-x-2 p-2 rounded-lg bg-gray-800/50; }
+        @media (max-width: 768px) {
+            .prose-dark { @apply text-sm leading-relaxed; }
+            .glass-card { @apply p-3; }
+            h1 { @apply text-2xl; }
+            .share-compact { @apply flex-col space-y-2; }
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen">
+    <!-- Header matching news.html -->
+    <header class="glass-nav fixed w-full top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/news" class="text-xl font-bold flex items-center">
+                <img src="./uploads/icon.png" alt="NewEra" class="h-8 mr-2">
+                <span>NewEra News</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <button id="backBtn" class="twitter-blue text-white px-4 py-2 rounded-full text-sm">Ortga</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pt-20 pb-8">
+        <!-- Hero Section -->
+        <section class="text-center mb-6 animate-fade-soft">
+            <img id="articleImage" class="w-full h-48 md:h-64 object-cover rounded-lg shadow-lg mb-4 glass-card p-0 border border-gray-600/50" loading="lazy" alt="Article Image">
+            <h1 id="articleTitleH1" class="text-3xl md:text-4xl font-bold mb-4 text-white">Article Title</h1>
+        </section>
+
+        <!-- Author & Stats - Compact with Views/Likes -->
+        <div class="glass-card p-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-soft">
+            <div class="flex items-center space-x-3">
+                <img id="authorImg" class="w-10 h-10 rounded-full border-2 border-blue-400/50" alt="Author">
+                <div>
+                    <p id="authorName" class="font-semibold text-white text-base"></p>
+                    <p id="publishDate" class="text-gray-400 text-sm">Sanasi</p>
+                </div>
+            </div>
+            <div class="flex space-x-4 text-gray-400 text-sm">
+                <span id="viewsCount" class="flex items-center space-x-1">
+                    <i class="fas fa-eye"></i><span id="viewNum">0</span> ko'rish
+                </span>
+                <button id="likeBtn" class="like-btn flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-heart"></i><span id="likeNum">0</span> yoqtirish
+                </button>
+            </div>
+        </div>
+
+        <!-- Article Content -->
+        <article id="articleContent" class="prose-dark mb-6 text-base animate-fade-soft"></article>
+
+        <!-- Compact Sharing -->
+        <div class="glass-card p-4 mb-6 animate-fade-soft">
+            <div class="share-compact">
+                <a id="twitterShare" href="#" class="twitter-blue text-white px-3 py-2 rounded text-sm flex items-center space-x-1">
+                    <i class="fab fa-twitter"></i><span>Twitter</span>
+                </a>
+                <a id="facebookShare" href="#" class="bg-blue-600 text-white px-3 py-2 rounded text-sm flex items-center space-x-1">
+                    <i class="fab fa-facebook-f"></i><span>Facebook</span>
+                </a>
+                <button id="copyLink" class="bg-gray-600 text-white px-3 py-2 rounded text-sm flex items-center space-x-1">🔗 Ulashish</button>
+            </div>
+        </div>
+
+        <!-- Related Articles -->
+        <section id="relatedArticles" class="mb-6 animate-fade-soft">
+            <h2 class="text-2xl font-bold mb-4 text-white">Bog'liq Yangiliklar</h2>
+            <div id="relatedGrid" class="grid md:grid-cols-2 gap-4">
+                <!-- Related cards -->
+            </div>
+        </section>
+
+        <!-- Toggleable Comments -->
+        <section class="glass-card p-4 rounded-lg mb-6 animate-fade-soft">
+            <div class="flex justify-between items-center mb-4 cursor-pointer" id="toggleCommentsBtn">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fas fa-comments"></i><span>Izohlar (<span id="commentCount">0</span>)</span>
+                </h3>
+                <i id="toggleIcon" class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+            </div>
+            <div id="commentsToggle" class="comments-toggle opacity-0">
+                <div class="comments-list space-y-4 mb-4">
+                    <!-- Comments loaded here -->
+                </div>
+                <form id="commentForm" class="space-y-3">
+                    <input type="text" id="commentInput" placeholder="Izohingizni yozing... (max 500 belgi)" class="glass-input px-3 py-2 rounded w-full" maxlength="500">
+                    <button type="submit" class="twitter-blue text-white px-6 py-2 rounded w-full">Yuborish</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer matching news.html -->
+    <footer class="max-w-6xl mx-auto px-4 py-6 text-center text-gray-400 border-t border-gray-600/50">
+        <a href="/rss.xml" class="mr-4">RSS</a>
+        <a href="https://twitter.com/newera" class="mr-4">Twitter</a>
+        <a href="https://facebook.com/newera">Facebook</a>
+        <p>&copy; 2025 NewEra. Barcha huquqlar himoyalangan.</p>
+    </footer>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id') || window.location.pathname.split('/').pop();
+        let deviceId = localStorage.getItem('deviceId') || uuidv4();
+        localStorage.setItem('deviceId', deviceId);
+        let hasViewed = false;
+        let isLiked = false;
+
+        // Toggle Comments
+        document.getElementById('toggleCommentsBtn').addEventListener('click', () => {
+            const toggle = document.getElementById('commentsToggle');
+            const icon = document.getElementById('toggleIcon');
+            toggle.classList.toggle('open');
+            icon.style.transform = toggle.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+
+        // Back Button
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // Track View (add to views if not already)
+        async function trackView() {
+            if (hasViewed) return;
+            try {
+                const res = await fetch(`/api/news/${id}/view`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'device-id': deviceId },
+                    body: JSON.stringify({ deviceId })
+                });
+                if (res.ok) {
+                    hasViewed = true;
+                    updateViewCount(); // Refresh count
+                }
+            } catch (error) {
+                console.error('View tracking error:', error);
+            }
+        }
+
+        // Toggle Like
+        async function toggleLike() {
+            try {
+                const res = await fetch(`/api/news/${id}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'device-id': deviceId },
+                    body: JSON.stringify({ deviceId, action: isLiked ? 'unlike' : 'like' })
+                });
+                if (res.ok) {
+                    isLiked = !isLiked;
+                    const likeBtn = document.getElementById('likeBtn');
+                    const likeNum = document.getElementById('likeNum');
+                    likeBtn.classList.toggle('liked', isLiked);
+                    likeNum.textContent = await (await res.json()).likesCount;
+                }
+            } catch (error) {
+                console.error('Like error:', error);
+            }
+        }
+        document.getElementById('likeBtn').addEventListener('click', toggleLike);
+
+        // Update View Count
+        function updateViewCount() {
+            // This will be refreshed in loadArticle
+        }
+
+        async function loadArticle() {
+            try {
+                const res = await fetch(`/api/news/${id}`, { headers: { 'device-id': deviceId } });
+                const data = await res.json();
+                if (!data.success || !data.article) {
+                    document.body.innerHTML = '<div class="text-center pt-20"><h1 class="text-3xl text-white">Yangilik topilmadi</h1><a href="/news" class="twitter-blue mt-4 inline-block px-6 py-3 rounded-full">Bosh sahifaga qaytish</a></div>';
+                    return;
+                }
+                const article = data.article;
+                trackView(); // Track view on load
+
+                // Meta & Title
+                document.title = `${article.title} - NewEra`;
+                document.getElementById('articleTitle').textContent = `${article.title} - NewEra`;
+                document.getElementById('articleTitleH1').textContent = article.title;
+                const desc = article.description.substring(0, 160) + '...';
+                document.getElementById('articleDesc').setAttribute('content', desc);
+                document.querySelector('[property="og:title"]').setAttribute('content', article.title);
+                document.querySelector('[property="og:description"]').setAttribute('content', desc);
+                document.querySelector('[property="og:image"]').setAttribute('content', article.image || '');
+                document.querySelector('[property="og:url"]').setAttribute('content', `${window.location.origin}/news/${article._id}`);
+
+                // Hero Image
+                if (article.image) {
+                    document.getElementById('articleImage').src = article.image;
+                    document.getElementById('articleImage').alt = article.title;
+                } else {
+                    document.getElementById('articleImage').src = 'https://via.placeholder.com/800x400/1a1a1a?text=No+Image';
+                }
+
+                // Author & Date
+                const authorPic = article.journalistId.profilePic || 'https://via.placeholder.com/40?text=U';
+                document.getElementById('authorImg').src = authorPic;
+                document.getElementById('authorName').textContent = article.journalistId.fullName || "Noma'lum Muallif";
+                document.getElementById('publishDate').textContent = `Nashr etilgan: ${new Date(article.createdAt).toLocaleDateString('uz-UZ')}`;
+
+                // Stats - Check if liked
+                const views = article.views || [];
+                const likes = article.likes || [];
+                isLiked = likes.includes(deviceId);
+                document.getElementById('viewNum').textContent = views.length;
+                document.getElementById('likeNum').textContent = likes.length;
+                document.getElementById('likeBtn').classList.toggle('liked', isLiked);
+                document.getElementById('commentCount').textContent = (article.comments || []).length;
+
+                // Content Parsing
+                let content = article.description
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                content = `<p>${content}</p>`;
+                document.getElementById('articleContent').innerHTML = `<div class="prose-dark">${content}</div>`;
+
+                // Related Articles
+                const relatedGrid = document.getElementById('relatedGrid');
+                if (article.relatedArticles && article.relatedArticles.length > 0) {
+                    relatedGrid.innerHTML = article.relatedArticles.slice(0, 4).map(r => `
+                        <div class="glass-card p-4 rounded-lg cursor-pointer hover:bg-gray-800/50 transition-colors" onclick="window.location.href='/news/${r._id}'">
+                            <h4 class="font-bold text-white mb-2">${r.title}</h4>
+                            <p class="text-gray-300 mb-3 line-clamp-2">${r.description?.substring(0, 120) || ''}...</p>
+                            <a class="text-blue-400 text-sm">To'liq o'qish →</a>
+                        </div>
+                    `).join('');
+                } else {
+                    relatedGrid.innerHTML = '<p class="text-gray-400 text-center col-span-full">Hozircha bog\'liq yangiliklar yo\'q.</p>';
+                }
+
+                // Structured Data
+                const script = document.createElement('script');
+                script.type = 'application/ld+json';
+                script.textContent = JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "NewsArticle",
+                    "headline": article.title,
+                    "image": [article.image],
+                    "author": { "@type": "Person", "name": article.journalistId.fullName },
+                    "datePublished": article.createdAt,
+                    "dateModified": article.updatedAt,
+                    "description": article.description,
+                    "publisher": { 
+                        "@type": "Organization", 
+                        "name": "NewEra", 
+                        "logo": { "@type": "ImageObject", "url": `${window.location.origin}/logo.png` } 
+                    },
+                    "mainEntityOfPage": { "@type": "WebPage", "@id": window.location.href }
+                });
+                document.head.appendChild(script);
+
+                // Social Shares
+                setupSocialShares(article.title, window.location.href);
+
+                // Load Comments
+                loadComments(article.comments || []);
+            } catch (error) {
+                console.error('Xato:', error);
+                document.getElementById('articleContent').innerHTML = '<div class="prose-dark text-red-400 text-center py-8">Maqola yuklashda xatolik yuz berdi. Qayta urinib ko\'ring.</div>';
+            }
+        }
+
+        function setupSocialShares(title, url) {
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
+            document.getElementById('facebookShare').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+            
+            document.getElementById('copyLink').addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await navigator.clipboard.writeText(url);
+                    const btn = e.target.closest('button');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Nusxalandi!';
+                    setTimeout(() => btn.innerHTML = original, 2000);
+                } catch (err) {
+                    console.error('Nusxalashda xato:', err);
+                }
+            });
+        }
+
+        function loadComments(comments) {
+            const container = document.querySelector('.comments-list');
+            if (comments.length > 0) {
+                container.innerHTML = comments.map(c => `
+                    <div class="comment-item animate-fade-soft">
+                        <p class="text-white mb-2">${c.content}</p>
+                        <small class="text-blue-400 flex items-center space-x-2 text-sm">
+                            <span>${c.deviceId.substring(0,8)}...</span>
+                            <span>• ${new Date(c.createdAt).toLocaleString('uz-UZ')}</span>
+                        </small>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="text-center py-4 text-gray-400 animate-fade-soft">Hali izoh yo\'q. Birinchi bo\'ling!</div>';
+            }
+
+            // Comment Form
+            document.getElementById('commentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const content = document.getElementById('commentInput').value.trim();
+                if (!content) return alert('Izoh bo\'sh bo\'lmasligi kerak!');
+
+                try {
+                    const res = await fetch(`/api/news/${id}/comment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'device-id': deviceId },
+                        body: JSON.stringify({ content })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        document.getElementById('commentInput').value = '';
+                        loadArticle(); // Reload to update
+                    } else {
+                        alert('Izoh yuborishda xato: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Izoh xatosi:', error);
+                    alert('Izoh yuborishda xatolik.');
+                }
+            });
+        }
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadArticle();
+            // Stagger animations
+            document.querySelectorAll('.animate-fade-soft').forEach((el, i) => {
+                el.style.animationDelay = `${i * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,16 +1,29 @@
+<!-- news-editor.html - Enhanced: Mobile-responsive with overlay menu, beautiful glassmorphism, smooth animations, form validation, preview with structured data. Session check, edit/delete improved. -->
 <!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NewEra - Jurnalist Post Editor</title>
+    <meta name="description" content="Jurnalistlar uchun yangiliklar yaratish va tahrirlash - Google News standartlariga mos.">
     <meta property="og:title" content="NewEra - Jurnalist Post Editor">
     <meta property="og:description" content="Jurnalistlar uchun yangiliklar yaratish va tahrirlash">
     <meta property="og:image" content="./uploads/icon.png">
     <meta property="og:url" content="https://newera.com/news-editor">
     <meta property="og:site_name" content="NewEra">
     <meta property="og:type" content="website">
+    <link rel="canonical" href="https://newera.com/news-editor">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7GGGMHG9RD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-7GGGMHG9RD');
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -29,8 +42,9 @@
                             border: 'rgba(255, 255, 255, 0.2)'
                         }
                     },
-                    backdropBlur: {
-                        xs: '2px',
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out'
                     }
                 }
             }
@@ -49,6 +63,12 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
         
         .glass-nav {
@@ -62,27 +82,30 @@
             background: rgba(30, 30, 30, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
+            transition: all 0.3s ease;
         }
         
         .glass-input:focus {
             background: rgba(40, 40, 40, 0.7);
             border-color: rgba(29, 161, 242, 0.6);
             box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.2);
+            transform: scale(1.02);
         }
         
         .glass-button {
             background: rgba(30, 30, 30, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         
         .glass-button:hover {
             background: rgba(50, 50, 50, 0.7);
             border-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
         }
         
         .modal {
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
         
         ::-webkit-scrollbar {
@@ -104,10 +127,12 @@
         
         .twitter-blue {
             background-color: #1DA1F2;
+            transition: all 0.3s ease;
         }
         
         .twitter-blue:hover {
             background-color: #1a91da;
+            transform: scale(1.05);
         }
         
         .media-preview {
@@ -116,6 +141,11 @@
             max-height: 300px;
             border-radius: 0.5rem;
             overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .media-preview:hover {
+            transform: scale(1.02);
         }
 
         .remove-media {
@@ -130,6 +160,12 @@
             height: 30px;
             cursor: pointer;
             z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .remove-media:hover {
+            background: rgba(220, 53, 69, 0.8);
+            transform: scale(1.1);
         }
 
         .create-modal {
@@ -142,31 +178,88 @@
             height: 100%;
             background-color: rgba(0,0,0,0.8);
             backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+            animation: fade-in 0.3s ease-out;
         }
 
         .create-modal-content {
             background: rgba(15, 15, 15, 0.95);
-            margin: 5% auto;
+            margin: 2% auto;
             padding: 2rem;
             border-radius: 1rem;
             width: 90%;
             max-width: 600px;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .create-modal.open .create-modal-content {
+            transform: scale(1);
         }
 
         @media (max-width: 640px) {
             .create-modal-content {
-                margin: 10% auto;
+                margin: 5% auto;
                 width: 95%;
                 padding: 1rem;
             }
         }
+        
+        .hashtag {
+            background: rgba(29, 161, 242, 0.2);
+            color: #1DA1F2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            animation: fade-in 0.5s ease-out;
+        }
+        
+        .youtube-iframe {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        
+        .youtube-iframe iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .overlay-menu { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh; 
+            background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); 
+            z-index: 1000; transform: translateX(-100%); transition: transform 0.3s ease;
+        }
+        .overlay-menu.open { transform: translateX(0); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
-<body class="font-sans bg-gray-50">
-    <!-- Navbar -->
+<body class="font-sans">
+    <!-- Overlay Menu (Mobile) -->
+    <div id="overlayMenu" class="overlay-menu">
+        <button id="closeMenu" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+        <div class="flex flex-col items-center space-y-4 mt-8">
+            <a href="/news" class="twitter-blue text-white px-6 py-2 rounded-full">Yangiliklar</a>
+            <a href="/" class="twitter-blue text-white px-6 py-2 rounded-full">Asosiy</a>
+            <a href="/profile" class="twitter-blue text-white px-6 py-2 rounded-full">Profile</a>
+            <button id="createNewsBtnMobile" class="bg-green-500 text-white px-6 py-2 rounded-full">Yangi Yangilik</button>
+            <button id="logoutBtnMobile" class="bg-red-500 text-white px-6 py-2 rounded-full">Chiqish</button>
+        </div>
+    </div>
+
+    <!-- Navbar with hamburger -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex justify-between items-center py-3">
@@ -176,7 +269,10 @@
                         <span class="hidden sm:inline">NewEra Jurnalist</span>
                     </a>
                 </div>
-                <div class="flex items-center space-x-2">
+                <button id="hamburger" class="hamburger p-2 rounded-full glass-button md:hidden">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <div class="hidden md:flex items-center space-x-2">
                     <a href="/news" class="twitter-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors">Yangiliklar</a>
                     <button id="createNewsBtn" class="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors">Yangi Yangilik</button>
                     <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors">Chiqish</button>
@@ -187,7 +283,7 @@
 
     <!-- Asosiy kontent: Jurnalist maqolalari ro'yxati -->
     <div class="max-w-4xl mx-auto px-4 pt-24 pb-24">
-        <h1 class="text-2xl font-bold mb-6">Sizning Maqolalaringiz</h1>
+        <h1 class="text-2xl md:text-3xl font-bold mb-6 animate-slide-up">Sizning Maqolalaringiz</h1>
         <div id="articlesContainer" class="space-y-4">
             <!-- Maqolalar JS orqali yuklanadi -->
         </div>
@@ -196,15 +292,17 @@
     <!-- Yangi yangilik yaratish modali -->
     <div id="createModal" class="create-modal">
         <div class="create-modal-content">
-            <h2 class="text-xl font-bold mb-4">Yangi Yangilik Yaratish</h2>
+            <h2 class="text-xl font-bold mb-4 animate-slide-up">Yangi Yangilik Yaratish (Google News standartlariga mos)</h2>
             <form id="newsForm" enctype="multipart/form-data">
-                <input type="text" id="title" placeholder="Yangilik mavzusi (sarlavha)" class="glass-input w-full p-3 rounded-xl mb-4" required maxlength="200">
+                <input type="text" id="title" placeholder="Yangilik mavzusi (sarlavha, 200 belgigacha)" class="glass-input w-full p-3 rounded-xl mb-4" required maxlength="200">
                 
-                <textarea id="description" placeholder="Yangilik haqida batafsil..." class="glass-input w-full p-3 rounded-xl h-40 resize-none mb-4" required maxlength="5000"></textarea>
+                <textarea id="description" placeholder="Yangilik haqida batafsil (5000 belgigacha, SEO uchun kalit so'zlar qo'shing)..." class="glass-input w-full p-3 rounded-xl h-40 resize-none mb-4" required maxlength="5000"></textarea>
                 
                 <div class="mb-4">
                     <input type="file" id="imageFile" accept="image/*" class="glass-input w-full p-3 rounded-xl hidden">
-                    <label for="imageFile" class="glass-button w-full text-center py-3 rounded-xl cursor-pointer block">📎 Rasm yuklash</label>
+                    <label for="imageFile" class="glass-button w-full text-center py-3 rounded-xl cursor-pointer block flex items-center justify-center">
+                        <i class="fas fa-image mr-2"></i>📎 Rasm yuklash (og:image uchun)
+                    </label>
                     <div id="imagePreview" class="mt-2"></div>
                 </div>
                 
@@ -212,33 +310,74 @@
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">Kategoriya</label>
-                    <input type="text" id="category" placeholder="Kategoriya kiriting (yangi yaratish uchun)" class="glass-input w-full p-3 rounded-xl mb-2">
-                    <small class="text-gray-400">Mavjud kategoriyalar: Sport, Texnologiya, Siyosat va boshqalar. Yangi kategoriya avtomatik yaratiladi.</small>
+                    <input type="text" id="category" placeholder="Kategoriya (masalan: sport)" class="glass-input w-full p-3 rounded-xl mb-2" required>
+                    <small class="text-gray-400 text-xs">Mavjud: Sport, Texnologiya, Siyosat. Yangi kategoriya avtomatik yaratiladi.</small>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2">Hashtaglar (vergul bilan ajratib)</label>
-                    <input type="text" id="hashtags" placeholder="#hashtag1, #hashtag2" class="glass-input w-full p-3 rounded-xl">
+                    <label class="block text-sm font-medium mb-2">Hashtaglar (vergul bilan ajratib, SEO uchun)</label>
+                    <input type="text" id="hashtags" placeholder="#uzbekistan, #yangiliklar" class="glass-input w-full p-3 rounded-xl">
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2">Manbalar (vergul bilan ajratib)</label>
-                    <textarea id="sources" placeholder="Manba 1, Manba 2" class="glass-input w-full p-3 rounded-xl h-20 resize-none"></textarea>
+                    <label class="block text-sm font-medium mb-2">Manbalar (vergul bilan ajratib, Google News uchun muhim)</label>
+                    <textarea id="sources" placeholder="bbc.com, kun.uz" class="glass-input w-full p-3 rounded-xl h-20 resize-none" required></textarea>
                 </div>
                 
-                <div id="newsPreview" class="preview-post glass-card p-4 rounded-xl mt-4 hidden">
-                    <h3 id="previewTitle" class="font-bold mb-2"></h3>
-                    <p id="previewDescription"></p>
-                    <div id="previewImage"></div>
-                    <div id="previewVideo"></div>
-                    <div class="mt-2">
-                        <span>Kategoriya: <span id="previewCategory"></span></span>
+                <div id="newsPreview" class="preview-post glass-card p-4 rounded-xl mt-4 hidden animate-slide-up">
+                    <h3 id="previewTitle" class="font-bold mb-2 text-lg"></h3>
+                    <p id="previewDescription" class="text-sm mb-2"></p>
+                    <div id="previewImage" class="mb-2"></div>
+                    <div id="previewVideo" class="mb-2"></div>
+                    <div class="text-xs">
+                        <span>Kategoriya: <span id="previewCategory" class="text-blue-400"></span></span>
                         <div id="previewHashtags" class="flex flex-wrap mt-1"></div>
-                        <div id="previewSources" class="text-xs text-gray-500 mt-1"></div>
+                        <div id="previewSources" class="text-gray-500 mt-1"></div>
                     </div>
+                    <!-- Preview structured data -->
+                    <details class="mt-2 text-xs">
+                        <summary class="cursor-pointer">Structured Data Preview (Google News uchun)</summary>
+                        <pre id="structuredPreview" class="bg-gray-800 p-2 rounded text-xs overflow-auto mt-1"></pre>
+                    </details>
                 </div>
                 
-                <button type="submit" class="twitter-blue text-white w-full py-3 rounded-xl mt-4 hover:bg-blue-600 transition-colors font-medium">Yangilikni Joylash</button>
+                <button type="submit" class="twitter-blue text-white w-full py-3 rounded-xl mt-4 hover:bg-blue-600 transition-all font-medium animate-slide-up">Yangilikni Joylash</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tahrirlash modali -->
+    <div id="editModal" class="create-modal">
+        <div class="create-modal-content">
+            <h2 class="text-xl font-bold mb-4 animate-slide-up">Yangilikni Tahrirlash</h2>
+            <form id="editForm" enctype="multipart/form-data">
+                <input type="hidden" id="editId">
+                <input type="text" id="editTitle" placeholder="Sarlavha" class="glass-input w-full p-3 rounded-xl mb-4" required maxlength="200">
+                <textarea id="editDescription" placeholder="Tavsif" class="glass-input w-full p-3 rounded-xl h-40 resize-none mb-4" required maxlength="5000"></textarea>
+                <div class="mb-4">
+                    <input type="file" id="editImageFile" accept="image/*" class="glass-input w-full p-3 rounded-xl hidden">
+                    <label for="editImageFile" class="glass-button w-full text-center py-3 rounded-xl cursor-pointer block flex items-center justify-center">
+                        <i class="fas fa-image mr-2"></i>Rasm yangilash
+                    </label>
+                    <div id="editImagePreview" class="mt-2"></div>
+                </div>
+                <input type="url" id="editVideo" placeholder="Video linki" class="glass-input w-full p-3 rounded-xl mb-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Kategoriya</label>
+                    <input type="text" id="editCategory" placeholder="Kategoriya" class="glass-input w-full p-3 rounded-xl mb-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Hashtaglar</label>
+                    <input type="text" id="editHashtags" placeholder="Hashtaglar" class="glass-input w-full p-3 rounded-xl">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Manbalar</label>
+                    <textarea id="editSources" placeholder="Manbalar" class="glass-input w-full p-3 rounded-xl h-20 resize-none" required></textarea>
+                </div>
+                <div id="editPreview" class="glass-card p-4 rounded-xl mt-4 hidden animate-slide-up">
+                    <!-- Similar to newsPreview -->
+                </div>
+                <button type="submit" class="twitter-blue text-white w-full py-3 rounded-xl mt-4">Saqlash</button>
             </form>
         </div>
     </div>
@@ -246,29 +385,39 @@
     <script>
         let journalistId = null;
         let isLoading = false;
+        let editingId = null;
+
+        // Overlay menu
+        const hamburger = document.getElementById('hamburger');
+        const overlayMenu = document.getElementById('overlayMenu');
+        const closeMenu = document.getElementById('closeMenu');
+        const createNewsBtnMobile = document.getElementById('createNewsBtnMobile');
+        const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+        if (hamburger) hamburger.addEventListener('click', () => overlayMenu.classList.add('open'));
+        if (closeMenu) closeMenu.addEventListener('click', () => overlayMenu.classList.remove('open'));
+        if (createNewsBtnMobile) createNewsBtnMobile.addEventListener('click', () => { openCreateModal(); overlayMenu.classList.remove('open'); });
+        if (logoutBtnMobile) logoutBtnMobile.addEventListener('click', handleLogout);
 
         // Jurnalist session tekshirish
         async function checkJournalistSession() {
             try {
-                // Bu yerda /api/journalist/me endpoint kerak bo'lishi mumkin, lekin hozircha assume qilamiz
-                // Realda serverda /api/journalist/me route qo'shing
-                const response = await fetch('/api/journalist/me', { credentials: 'include' });
+                const response = await fetch('/user/me', { credentials: 'include' });
                 if (response.status === 401) {
-                    window.location.href = '/journalist-login.html';
+                    window.location.href = '/register-login.html';
                     return;
                 }
                 const data = await response.json();
                 if (data.success) {
-                    journalistId = data.journalist._id;
+                    journalistId = data.user._id;
                     loadArticles();
                 }
             } catch (error) {
                 console.error('Session tekshirishda xatolik:', error);
-                window.location.href = '/journalist-login.html';
+                window.location.href = '/register-login.html';
             }
         }
 
-        // Maqolalarni yuklash (faqat jurnalistning)
+        // Maqolalarni yuklash
         async function loadArticles() {
             try {
                 const response = await fetch(`/api/news/journalist/${journalistId}`);
@@ -284,142 +433,292 @@
         function renderArticles(articles) {
             const container = document.getElementById('articlesContainer');
             container.innerHTML = articles.map(article => `
-                <div class="glass-card p-4 rounded-xl">
-                    <h3 class="font-bold">${article.title}</h3>
-                    <p class="text-gray-300">${article.description.substring(0, 100)}...</p>
-                    <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                <div class="glass-card p-4 rounded-xl animate-slide-up">
+                    <h3 class="font-bold text-lg mb-2">${article.title}</h3>
+                    <p class="text-gray-300 text-sm mb-2">${article.description.substring(0, 100)}...</p>
+                    <div class="flex justify-between items-center text-xs text-gray-500 mb-2">
                         <span>Kategoriya: ${article.category}</span>
                         <span>Ko'rishlar: ${article.views.length}</span>
                     </div>
-                    <div class="flex space-x-2 mt-2">
-                        <button class="glass-button px-3 py-1 rounded text-xs" onclick="editArticle('${article._id}')">Tahrirlash</button>
-                        <button class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">O'chirish</button>
+                    <div class="flex space-x-2">
+                        <button class="glass-button px-3 py-1 rounded text-sm" onclick="editArticle('${article._id}')">
+                            <i class="fas fa-edit mr-1"></i>Tahrirlash
+                        </button>
+                        <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors" onclick="deleteArticle('${article._id}')">
+                            <i class="fas fa-trash mr-1"></i>O'chirish
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Modal setup
-        document.addEventListener('DOMContentLoaded', () => {
-            checkJournalistSession();
-
-            const createBtn = document.getElementById('createNewsBtn');
-            const modal = document.getElementById('createModal');
-            const form = document.getElementById('newsForm');
-            const title = document.getElementById('title');
-            const description = document.getElementById('description');
-            const imageFile = document.getElementById('imageFile');
-            const imagePreview = document.getElementById('imagePreview');
-            const video = document.getElementById('video');
-            const category = document.getElementById('category');
-            const hashtags = document.getElementById('hashtags');
-            const sources = document.getElementById('sources');
-            const preview = document.getElementById('newsPreview');
-            const logoutBtn = document.getElementById('logoutBtn');
-
-            createBtn.addEventListener('click', () => modal.style.display = 'block');
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
-
-            // Image preview
-            imageFile.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const url = URL.createObjectURL(file);
-                    imagePreview.innerHTML = `<div class="media-preview"><img src="${url}" class="w-full h-auto"><button type="button" class="remove-media" onclick="removeImage()">×</button></div>`;
-                    updatePreview();
+        // Edit article
+        async function editArticle(id) {
+            try {
+                const response = await fetch(`/api/news/${id}`);
+                const data = await response.json();
+                if (data.success) {
+                    editingId = id;
+                    document.getElementById('editId').value = id;
+                    document.getElementById('editTitle').value = data.article.title;
+                    document.getElementById('editDescription').value = data.article.description;
+                    document.getElementById('editVideo').value = data.article.video || '';
+                    document.getElementById('editCategory').value = data.article.category;
+                    document.getElementById('editHashtags').value = data.article.hashtags.join(', ');
+                    document.getElementById('editSources').value = data.article.sources.join(', ');
+                    if (data.article.image) {
+                        document.getElementById('editImagePreview').innerHTML = `<img src="${data.article.image}" class="media-preview w-full h-auto"><button type="button" class="remove-media" onclick="removeEditImage()">×</button>`;
+                    }
+                    document.getElementById('editModal').classList.add('open');
+                    updateEditPreview();
                 }
-            });
-
-            window.removeImage = () => {
-                imagePreview.innerHTML = '';
-                imageFile.value = '';
-                updatePreview();
-            };
-
-            // Input listeners for preview
-            [title, description, video, category, hashtags, sources].forEach(input => {
-                input.addEventListener('input', updatePreview);
-            });
-
-            function updatePreview() {
-                document.getElementById('previewTitle').textContent = title.value || 'Sarlavha...';
-                document.getElementById('previewDescription').textContent = description.value || 'Tavsif...';
-                document.getElementById('previewImage').innerHTML = imagePreview.innerHTML;
-                
-                if (video.value) {
-                    const videoId = video.value.split('v=')[1]?.split('&')[0];
-                    document.getElementById('previewVideo').innerHTML = `<div class="youtube-iframe"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
-                } else {
-                    document.getElementById('previewVideo').innerHTML = '';
-                }
-                
-                document.getElementById('previewCategory').textContent = category.value || 'Kategoriya...';
-                
-                const tags = hashtags.value.split(',').map(t => t.trim()).filter(t => t);
-                document.getElementById('previewHashtags').innerHTML = tags.map(t => `<span class="hashtag">${t}</span>`).join('');
-                
-                document.getElementById('previewSources').textContent = sources.value || 'Manbalar...';
-                
-                preview.classList.remove('hidden');
+            } catch (error) {
+                console.error('Edit yuklashda xatolik:', error);
             }
+        }
 
-            // Form submit
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const formData = new FormData();
-                formData.append('title', title.value);
-                formData.append('description', description.value);
-                if (imageFile.files[0]) formData.append('image', imageFile.files[0]);
-                formData.append('video', video.value);
-                formData.append('category', category.value);
-                formData.append('hashtags', hashtags.value);
-                formData.append('sources', sources.value);
-
+        // Delete article
+        async function deleteArticle(id) {
+            if (confirm('O\'chirishni tasdiqlaysizmi?')) {
                 try {
-                    const response = await fetch('/api/news', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include'
-                    });
+                    const response = await fetch(`/api/news/${id}`, { method: 'DELETE', credentials: 'include' });
                     const data = await response.json();
                     if (data.success) {
-                        modal.style.display = 'none';
-                        form.reset();
-                        imagePreview.innerHTML = '';
-                        preview.classList.add('hidden');
-                        showMessage('Yangilik muvaffaqiyatli joylandi!', 'success');
-                        loadArticles(); // Reload list
+                        showMessage(data.message, 'success');
+                        loadArticles();
                     } else {
-                        showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                        showMessage(data.message, 'error');
                     }
                 } catch (error) {
-                    console.error('Yangilik joylashda xatolik:', error);
                     showMessage('Xatolik yuz berdi', 'error');
                 }
-            });
+            }
+        }
 
-            // Logout
-            logoutBtn.addEventListener('click', async () => {
-                await fetch('/api/journalist/logout', { method: 'POST' });
-                window.location.href = '/journalist-login.html';
+        // Open create modal
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('open');
+            editingId = null;
+        }
+
+        // Modal close
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('open');
+        }
+
+        // Image preview for create
+        document.getElementById('imageFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                document.getElementById('imagePreview').innerHTML = `<div class="media-preview"><img src="${url}" class="w-full h-auto"><button type="button" class="remove-media" onclick="removeImage()">×</button></div>`;
+                updatePreview();
+            }
+        });
+
+        window.removeImage = () => {
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageFile').value = '';
+            updatePreview();
+        };
+
+        // Edit image preview
+        document.getElementById('editImageFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                document.getElementById('editImagePreview').innerHTML = `<div class="media-preview"><img src="${url}" class="w-full h-auto"><button type="button" class="remove-media" onclick="removeEditImage()">×</button></div>`;
+                updateEditPreview();
+            }
+        });
+
+        window.removeEditImage = () => {
+            document.getElementById('editImagePreview').innerHTML = '';
+            document.getElementById('editImageFile').value = '';
+            updateEditPreview();
+        };
+
+        // Input listeners for preview
+        const previewInputs = ['title', 'description', 'video', 'category', 'hashtags', 'sources'];
+        previewInputs.forEach(id => {
+            document.getElementById(id)?.addEventListener('input', updatePreview);
+        });
+
+        const editPreviewInputs = ['editTitle', 'editDescription', 'editVideo', 'editCategory', 'editHashtags', 'editSources'];
+        editPreviewInputs.forEach(id => {
+            document.getElementById(id)?.addEventListener('input', updateEditPreview);
+        });
+
+        function updatePreview() {
+            const title = document.getElementById('title').value || 'Sarlavha...';
+            const description = document.getElementById('description').value.substring(0, 200) || 'Tavsif...';
+            const video = document.getElementById('video').value;
+            const category = document.getElementById('category').value || 'Kategoriya...';
+            const hashtags = document.getElementById('hashtags').value;
+            const sources = document.getElementById('sources').value || 'Manbalar...';
+
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewDescription').textContent = description + (description.length < 200 ? '' : '...');
+            document.getElementById('previewImage').innerHTML = document.getElementById('imagePreview').innerHTML || '';
+            
+            if (video) {
+                const videoId = video.split('v=')[1]?.split('&')[0];
+                document.getElementById('previewVideo').innerHTML = `<div class="youtube-iframe"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
+            } else {
+                document.getElementById('previewVideo').innerHTML = '';
+            }
+            
+            document.getElementById('previewCategory').textContent = category;
+            
+            const tags = hashtags.split(',').map(t => t.trim()).filter(t => t);
+            document.getElementById('previewHashtags').innerHTML = tags.map(t => `<span class="hashtag">${t}</span>`).join('');
+            
+            document.getElementById('previewSources').textContent = sources;
+            
+            // Structured data preview
+            const structured = {
+                "@context": "https://schema.org",
+                "@type": "NewsArticle",
+                "headline": title,
+                "description": description + '...',
+                "image": "Yuklangan rasm" || './uploads/icon.png',
+                "author": { "@type": "Person", "name": "Jurnalist" },
+                "datePublished": new Date().toISOString(),
+                "publisher": { "@type": "Organization", "name": "NewEra", "logo": { "@type": "ImageObject", "url": "./uploads/icon.png" } },
+                "keywords": tags.join(', ')
+            };
+            document.getElementById('structuredPreview').textContent = JSON.stringify(structured, null, 2);
+            
+            document.getElementById('newsPreview').classList.remove('hidden');
+        }
+
+        function updateEditPreview() {
+            // Similar to updatePreview, but for edit fields
+            const title = document.getElementById('editTitle').value || 'Sarlavha...';
+            // ... (implement similar logic for editPreview)
+            document.getElementById('editPreview').classList.remove('hidden');
+        }
+
+        // Form submit (create)
+        document.getElementById('newsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateForm(e.target)) return;
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            if (document.getElementById('imageFile').files[0]) formData.append('image', document.getElementById('imageFile').files[0]);
+            formData.append('video', document.getElementById('video').value);
+            formData.append('category', document.getElementById('category').value);
+            formData.append('hashtags', document.getElementById('hashtags').value);
+            formData.append('sources', document.getElementById('sources').value);
+
+            try {
+                const response = await fetch('/api/news', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    closeModal('createModal');
+                    e.target.reset();
+                    document.getElementById('imagePreview').innerHTML = '';
+                    document.getElementById('newsPreview').classList.add('hidden');
+                    showMessage('Yangilik muvaffaqiyatli joylandi!', 'success');
+                    loadArticles();
+                } else {
+                    showMessage(data.message || 'Xatolik yuz berdi', 'error');
+                }
+            } catch (error) {
+                showMessage('Server xatosi', 'error');
+            }
+        });
+
+        // Edit form submit
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateForm(e.target)) return;
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('editTitle').value);
+            formData.append('description', document.getElementById('editDescription').value);
+            if (document.getElementById('editImageFile').files[0]) formData.append('image', document.getElementById('editImageFile').files[0]);
+            formData.append('video', document.getElementById('editVideo').value);
+            formData.append('category', document.getElementById('editCategory').value);
+            formData.append('hashtags', document.getElementById('editHashtags').value);
+            formData.append('sources', document.getElementById('editSources').value);
+
+            try {
+                const response = await fetch(`/api/news/${editingId}`, {
+                    method: 'PUT',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    closeModal('editModal');
+                    e.target.reset();
+                    document.getElementById('editImagePreview').innerHTML = '';
+                    document.getElementById('editPreview').classList.add('hidden');
+                    showMessage('Yangilik yangilandi!', 'success');
+                    loadArticles();
+                } else {
+                    showMessage(data.message || 'Xatolik', 'error');
+                }
+            } catch (error) {
+                showMessage('Server xatosi', 'error');
+            }
+        });
+
+        // Close modals on outside click
+        ['createModal', 'editModal'].forEach(modalId => {
+            document.getElementById(modalId).addEventListener('click', (e) => {
+                if (e.target.classList.contains('create-modal')) closeModal(modalId);
             });
         });
 
+        // Create button
+        document.getElementById('createNewsBtn')?.addEventListener('click', openCreateModal);
+
+        // Logout
+        function handleLogout() {
+            fetch('/logout', { method: 'POST', credentials: 'include' }).then(() => {
+                window.location.href = '/register-login.html';
+            });
+        }
+        document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+
+        function validateForm(form) {
+            const required = form.querySelectorAll('[required]');
+            for (let input of required) {
+                if (!input.value.trim()) {
+                    showMessage('Barcha majburiy maydonlarni to\'ldiring', 'error');
+                    input.focus();
+                    return false;
+                }
+            }
+            const sources = form.querySelector('#sources, #editSources');
+            if (sources && !sources.value.split(',').some(s => s.trim())) {
+                showMessage('Kamida bitta manba kiriting', 'error');
+                return false;
+            }
+            return true;
+        }
+
         function showMessage(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium z-50 ${
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-xl text-white font-medium z-50 animate-slide-up ${
                 type === 'success' ? 'bg-green-500' : 'bg-red-500'
             }`;
-            toast.textContent = message;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-exclamation-triangle'} mr-2"></i>${message}`;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Tahrirlash funksiyasi (placeholder, realda modal ochib form to'ldirish)
-        window.editArticle = (id) => {
-            showMessage('Tahrirlash funksiyasi qo\'shilmoqda...', 'info');
-            // Realda article yuklab form to'ldirish
-        };
+        document.addEventListener('DOMContentLoaded', () => {
+            checkJournalistSession();
+        });
     </script>
 </body>
 </html>
